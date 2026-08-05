@@ -36,8 +36,12 @@ export const luxmatchApi = {
     fd.append("file", file);
     const res = await fetch(`${API}/analyze`, { method: "POST", body: fd, cache: "no-store" });
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      throw new Error(j?.detail || `${res.status}`);
+      const j = await res.json().catch(() => ({} as Record<string, unknown>));
+      const msg =
+        (typeof j?.detail === "string" && j.detail) ||
+        (typeof j?.error === "string" && j.error) ||
+        (res.status === 502 ? "Backend indisponible" : `Erreur ${res.status}`);
+      throw new Error(msg);
     }
     return res.json() as Promise<{
       ok: boolean;

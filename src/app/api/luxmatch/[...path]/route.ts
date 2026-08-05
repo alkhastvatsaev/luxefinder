@@ -37,6 +37,25 @@ async function proxy(req: NextRequest, pathParts: string[]) {
       cache: "no-store",
       signal: AbortSignal.timeout(280_000),
     });
+    const ctOut = upstream.headers.get("content-type") || "";
+    // ngrok offline / interstitial → HTML 404; surface a clear JSON error
+    if (ctOut.includes("text/html") && !upstream.ok) {
+      const text = await upstream.text();
+      if (/ERR_NGROK|ngrok/i.test(text) || upstream.status === 404) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "API offline",
+            detail: "Backend temporairement indisponible (tunnel API). Réessaie dans un instant.",
+          },
+          { status: 502 }
+        );
+      }
+      return new NextResponse(text, {
+        status: upstream.status,
+        headers: { "content-type": ctOut },
+      });
+    }
     const outHeaders = new Headers();
     for (const h of ["content-type", "content-disposition", "cache-control"]) {
       const v = upstream.headers.get(h);
@@ -45,7 +64,11 @@ async function proxy(req: NextRequest, pathParts: string[]) {
     return new NextResponse(upstream.body, { status: upstream.status, headers: outHeaders });
   } catch (err) {
     return NextResponse.json(
-      { ok: false, error: "API unreachable", detail: err instanceof Error ? err.message : "err" },
+      {
+        ok: false,
+        error: "API unreachable",
+        detail: "Backend injoignable. Réessaie dans un instant.",
+      },
       { status: 502 }
     );
   }
