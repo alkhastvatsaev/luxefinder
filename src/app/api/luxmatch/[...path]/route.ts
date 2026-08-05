@@ -11,7 +11,7 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 function err(e: unknown, fallback = 500) {
   const status = (e as { status?: number })?.status || fallback;

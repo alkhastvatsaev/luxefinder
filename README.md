@@ -1,34 +1,34 @@
 # LuxMatch
 
-Marketplace photo → devis.
+Marketplace photo → devis. **Live:** https://luxmatch-six.vercel.app
 
-**Live:** https://luxmatch-six.vercel.app
+## Reconnaissance luxe (proche Lens)
 
-## Reconnaissance produit
+Pipeline multi-signaux :
 
-**Priorité : Google Cloud Vision** (`WEB_DETECTION` + logo + OCR) — le plus proche de Google Lens en API officielle.
+1. **Google Cloud Vision** — WEB_DETECTION + logo + OCR + IMAGE_PROPERTIES + OBJECT_LOCALIZATION
+2. **ROI crops** (sharp) — centre + zone hardware
+3. **KB modèles luxe** + scoring titres / anti-réplique
+4. **Google Lens** via SerpAPI (`SERPAPI_KEY`) si configuré
+5. **Product Search** catalogue GCP optionnel
+6. **Synthèse LLM** (OpenAI / Gemini) → top-3 candidats
+7. **Cache** Blob par hash image (7j)
 
-1. Crée un projet [Google Cloud](https://console.cloud.google.com/)
-2. Active **Cloud Vision API**
-3. Crée une **API key** (restreins-la à Vision API)
-4. Sur Vercel : `GOOGLE_VISION_API_KEY=...`
-
-Fallback optionnel : `OPENAI_API_KEY` (GPT-4o). Sans clé → mode démo.
-
-## Env
+### Env
 
 | Variable | Rôle |
 |----------|------|
-| `GOOGLE_VISION_API_KEY` | ID produit type Lens (recommandé) |
-| `BLOB_READ_WRITE_TOKEN` | Auto (Blob) |
-| `OPENAI_API_KEY` | Fallback description |
-| `LUXMATCH_PUBLIC_URL` | `https://luxmatch-six.vercel.app` |
+| `GOOGLE_VISION_API_KEY` | Obligatoire pour ID précise |
+| `OPENAI_API_KEY` | Synthèse / fallback |
+| `SERPAPI_KEY` | Google Lens shopping/visual |
+| `PRODUCT_SEARCH_PROJECT` | Projet GCP Product Search |
+| `PRODUCT_SEARCH_LOCATION` | ex. `us-west1` |
+| `PRODUCT_SEARCH_PRODUCT_SET` | ID du product set |
+| `BLOB_READ_WRITE_TOKEN` | Auto |
+| `LUXMATCH_PUBLIC_URL` | URL publique |
 
-## Local
+### Métriques offline
 
 ```bash
-npm install
-npx vercel env pull
-# ajoute GOOGLE_VISION_API_KEY dans .env.local
-npm run dev   # :3001
+npx tsx scripts/vision-metrics.ts
 ```

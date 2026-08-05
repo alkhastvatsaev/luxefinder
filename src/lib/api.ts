@@ -19,6 +19,13 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export type ProductCandidate = {
+  brand: string;
+  model: string;
+  score: number;
+  source?: string;
+};
+
 export type AiDescription = {
   brand?: string;
   model?: string;
@@ -30,6 +37,9 @@ export type AiDescription = {
   mock?: boolean;
   provider?: string;
   best_guess?: string;
+  candidates?: ProductCandidate[];
+  authenticity_uncertain?: boolean;
+  matching_pages?: string[];
 };
 
 export const luxmatchApi = {

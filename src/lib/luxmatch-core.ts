@@ -10,7 +10,18 @@ import {
   type Quote,
   type Rfq,
 } from "./store";
-import { analyzeWithGoogleVision, hasGoogleVisionKey } from "./google-vision";
+import {
+  extractVisionSignals,
+  extractVisionSignalsFromB64,
+  hasGoogleVisionKey,
+  mergeVisionSignals,
+} from "./google-vision";
+import { resolveLuxuryProduct, type VisionSignals } from "./luxury-resolve";
+import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product";
+import { fetchGoogleLensByUrl, hasSerpApiKey } from "./google-lens";
+import { getCachedAnalyze, imageHash, setCachedAnalyze } from "./analyze-cache";
+import { makeRoiCrops } from "./image-crops";
+import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
 
 function productLine(rfq: Rfq): string {
   if (rfq.user_edit?.trim()) return rfq.user_edit.trim().slice(0, 180);
@@ -21,21 +32,10 @@ function productLine(rfq: Rfq): string {
   return String(ai.summary || "article demandé").slice(0, 180);
 }
 
-/** Primary: Google Vision (Lens-like). Fallback: OpenAI. Else mock. */
-export async function analyzeImage(
+async function openaiVisionFallback(
   bytes: ArrayBuffer,
   contentType: string
 ): Promise<Record<string, unknown>> {
-  if (hasGoogleVisionKey()) {
-    try {
-      const vision = await analyzeWithGoogleVision(bytes);
-      if (vision) return vision;
-    } catch (err) {
-      console.error("google_vision failed", err);
-      // fall through to OpenAI / mock
-    }
-  }
-
   const key = (process.env.OPENAI_API_KEY || "").trim();
   if (!key) {
     return {
@@ -45,22 +45,16 @@ export async function analyzeImage(
       color: "non déterminée",
       material: "non déterminée",
       summary: hasGoogleVisionKey()
-        ? "Google Vision a échoué. Décrivez le produit manuellement, ou vérifiez GOOGLE_VISION_API_KEY."
-        : "Ajoute GOOGLE_VISION_API_KEY (Google Cloud Vision — proche de Lens) pour une ID précise.",
+        ? "Pipeline Vision a échoué. Décrivez le produit manuellement."
+        : "Ajoute GOOGLE_VISION_API_KEY pour une ID précise (proche Lens).",
       confidence: 0.15,
       mock: true,
       provider: "none",
+      candidates: [],
     };
   }
-
   const b64 = Buffer.from(bytes).toString("base64");
   const mime = contentType.startsWith("image/") ? contentType : "image/jpeg";
-  const prompt =
-    "Tu analyses une photo produit (mode / luxe). " +
-    "Réponds UNIQUEMENT en JSON valide avec les clés: " +
-    "brand, model, category, color, material, summary (2-3 phrases FR précises), confidence (0-1). " +
-    "Si incertain, brand='inconnue' et explique dans summary.";
-
   try {
     const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -75,7 +69,11 @@ export async function analyzeImage(
           {
             role: "user",
             content: [
-              { type: "text", text: prompt },
+              {
+                type: "text",
+                text:
+                  "Tu analyses une photo produit luxe. JSON: brand, model, category, color, material, summary, confidence, candidates (max 3 {brand,model,score}).",
+              },
               { type: "image_url", image_url: { url: `data:${mime};base64,${b64}` } },
             ],
           },
@@ -85,8 +83,7 @@ export async function analyzeImage(
     });
     if (!r.ok) throw new Error(`openai ${r.status}`);
     const data = await r.json();
-    const content = data?.choices?.[0]?.message?.content;
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(data.choices[0].message.content);
     return {
       brand: String(parsed.brand || "inconnue"),
       model: String(parsed.model || ""),
@@ -95,6 +92,7 @@ export async function analyzeImage(
       material: String(parsed.material || ""),
       summary: String(parsed.summary || ""),
       confidence: Number(parsed.confidence || 0.5),
+      candidates: Array.isArray(parsed.candidates) ? parsed.candidates.slice(0, 3) : [],
       mock: false,
       provider: "openai",
     };
@@ -105,21 +103,114 @@ export async function analyzeImage(
       category: "",
       color: "",
       material: "",
-      summary: `Analyse IA indisponible. Décrivez le produit manuellement. (${err instanceof Error ? err.message : "err"})`,
+      summary: `Analyse indisponible (${err instanceof Error ? err.message : "err"})`,
       confidence: 0,
       mock: true,
       provider: "none",
+      candidates: [],
     };
   }
 }
 
+/** Full luxury pipeline: Vision (+crops) + Lens + Product Search + KB + LLM. */
+export async function analyzeImage(
+  bytes: ArrayBuffer,
+  contentType: string,
+  opts?: { publicPhotoUrl?: string }
+): Promise<Record<string, unknown>> {
+  if (!hasGoogleVisionKey()) {
+    return openaiVisionFallback(bytes, contentType);
+  }
+
+  try {
+    const signalParts: VisionSignals[] = [];
+
+    // Full frame Vision
+    const full = await extractVisionSignals(bytes);
+    signalParts.push(full);
+
+    // ROI crops (sharp) — parallel secondary Vision
+    const crops = await makeRoiCrops(bytes);
+    if (crops.length) {
+      const cropSignals = await Promise.all(
+        crops.slice(0, 2).map(async (c) => {
+          try {
+            const b64 = Buffer.from(c.bytes).toString("base64");
+            return await extractVisionSignalsFromB64(b64);
+          } catch {
+            return null;
+          }
+        })
+      );
+      for (const s of cropSignals) if (s) signalParts.push(s);
+    }
+
+    let signals = mergeVisionSignals(signalParts);
+
+    // Google Lens (SerpAPI) via public URL when available
+    if (hasSerpApiKey() && opts?.publicPhotoUrl) {
+      const lens = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 14_000 });
+      if (lens.length) {
+        signals = {
+          ...signals,
+          lensProducts: [...(signals.lensProducts || []), ...lens],
+        };
+      }
+    }
+
+    // Own Product Search catalog
+    if (hasProductSearchConfig()) {
+      const hits = await searchLuxuryCatalog(bytes);
+      if (hits.length) {
+        signals = {
+          ...signals,
+          lensProducts: [
+            ...(signals.lensProducts || []),
+            ...hits.map((h) => ({ title: h.title, score: h.score, source: "product_search" })),
+          ],
+        };
+      }
+    }
+
+    const resolved = resolveLuxuryProduct(signals);
+    const synth =
+      (await synthesizeLuxuryProduct(signals, resolved, {
+        imageBytes: bytes,
+        contentType,
+      })) || fromResolvedOnly(signals, resolved);
+
+    return { ...synth };
+  } catch (err) {
+    console.error("luxury pipeline failed", err);
+    return openaiVisionFallback(bytes, contentType);
+  }
+}
 
 export async function handleAnalyze(file: File) {
   const buf = await file.arrayBuffer();
   if (buf.byteLength < 100) throw new Error("empty image");
   if (buf.byteLength > 12_000_000) throw new Error("image too large (max 12MB)");
+
+  const hash = imageHash(buf);
+  const cached = await getCachedAnalyze(hash);
+  if (cached && cached.brand) {
+    const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
+    const row = createDraft(photoUrl, { ...cached, cached: true });
+    await saveRfq(row);
+    return {
+      ok: true,
+      request_id: row.id,
+      client_token: row.client_token,
+      photo_url: row.photo_url,
+      ai_description: row.ai_description,
+      status: row.status,
+      cached: true,
+    };
+  }
+
   const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
-  const ai = await analyzeImage(buf, file.type || "image/jpeg");
+  const ai = await analyzeImage(buf, file.type || "image/jpeg", { publicPhotoUrl: photoUrl });
+  await setCachedAnalyze(hash, ai);
   const row = createDraft(photoUrl, ai);
   await saveRfq(row);
   return {
@@ -131,6 +222,7 @@ export async function handleAnalyze(file: File) {
     status: row.status,
   };
 }
+
 
 export async function handleConfirm(body: {
   request_id: number;
