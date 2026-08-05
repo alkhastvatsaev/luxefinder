@@ -217,6 +217,8 @@ export function rankMatchLinks(products: LensProduct[], limit = 10): RankedMatch
     const link = p.link;
     if (!link || !/^https?:\/\//i.test(link)) continue;
     if (REPLICA_PATTERNS.test(p.title) || REPLICA_PATTERNS.test(link)) continue;
+    // skip low-value social noise
+    if (/\b(tiktok|instagram|pinterest|facebook)\b/i.test(hostOf(link))) continue;
     const key = link.split("?")[0].toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);

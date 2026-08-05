@@ -95,7 +95,7 @@ export const TRUSTED_DOMAINS = [
 ];
 
 export const REPLICA_PATTERNS =
-  /\b(replica|réplique|replika|fake|1:1|1\/1|miroir|mirror|super\s*fake|aaa\+|wholesale|usine|factory\s*direct)\b/i;
+  /\b(replica|réplique|replika|fake|1:1|1\/1|miroir|mirror|super\s*fake|aaa\+|wholesale|usine|factory\s*direct|高仿|精仿|复刻)\b/i;
 
 export function normalizeText(s: string): string {
   return s
