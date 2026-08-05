@@ -1,92 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  addReview,
+  clientView,
+  handleAnalyze,
+  handleConfirm,
+  selectQuote,
+  submitQuote,
+  supplierView,
+} from "@/lib/luxmatch-core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
-function backendBase(): string {
-  return (
-    process.env.BACKEND_URL ||
-    process.env.WAREACH_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://127.0.0.1:8000"
-  ).replace(/\/$/, "");
-}
-
-async function proxy(req: NextRequest, pathParts: string[]) {
-  const targetPath = pathParts.join("/");
-  const url = new URL(req.url);
-  const dest = `${backendBase()}/api/luxmatch/${targetPath}${url.search}`;
-
-  const headers = new Headers();
-  const ct = req.headers.get("content-type");
-  if (ct) headers.set("content-type", ct);
-  headers.set("accept", req.headers.get("accept") || "*/*");
-  headers.set("ngrok-skip-browser-warning", "1");
-
-  let body: ArrayBuffer | undefined;
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    body = await req.arrayBuffer();
-  }
-
-  try {
-    const upstream = await fetch(dest, {
-      method: req.method,
-      headers,
-      body: body && body.byteLength > 0 ? body : undefined,
-      cache: "no-store",
-      signal: AbortSignal.timeout(280_000),
-    });
-    const ctOut = upstream.headers.get("content-type") || "";
-    // ngrok offline / interstitial → HTML 404; surface a clear JSON error
-    if (ctOut.includes("text/html") && !upstream.ok) {
-      const text = await upstream.text();
-      if (/ERR_NGROK|ngrok/i.test(text) || upstream.status === 404) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "API offline",
-            detail: "Backend temporairement indisponible (tunnel API). Réessaie dans un instant.",
-          },
-          { status: 502 }
-        );
-      }
-      return new NextResponse(text, {
-        status: upstream.status,
-        headers: { "content-type": ctOut },
-      });
-    }
-    const outHeaders = new Headers();
-    for (const h of ["content-type", "content-disposition", "cache-control"]) {
-      const v = upstream.headers.get(h);
-      if (v) outHeaders.set(h, v);
-    }
-    return new NextResponse(upstream.body, { status: upstream.status, headers: outHeaders });
-  } catch (err) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "API unreachable",
-        detail: "Backend injoignable. Réessaie dans un instant.",
-      },
-      { status: 502 }
-    );
-  }
+function err(e: unknown, fallback = 500) {
+  const status = (e as { status?: number })?.status || fallback;
+  const detail = e instanceof Error ? e.message : "error";
+  return NextResponse.json({ ok: false, detail }, { status });
 }
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
-  return proxy(req, path);
+  try {
+    if (path[0] === "r" && path[1] && path.length === 2) {
+      const view = await clientView(path[1]);
+      if (!view) return NextResponse.json({ detail: "not found" }, { status: 404 });
+      return NextResponse.json(view);
+    }
+    if (path[0] === "s" && path[1] && path.length === 2) {
+      const view = await supplierView(path[1]);
+      if (!view) return NextResponse.json({ detail: "not found" }, { status: 404 });
+      return NextResponse.json(view);
+    }
+    return NextResponse.json({ detail: "not found" }, { status: 404 });
+  } catch (e) {
+    return err(e);
+  }
 }
+
 export async function POST(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
-  return proxy(req, path);
-}
-export async function PUT(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
-}
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
-  const { path } = await ctx.params;
-  return proxy(req, path);
+  try {
+    if (path.length === 1 && path[0] === "analyze") {
+      const form = await req.formData();
+      const file = form.get("file");
+      if (!(file instanceof File)) {
+        return NextResponse.json({ detail: "file required" }, { status: 400 });
+      }
+      const out = await handleAnalyze(file);
+      return NextResponse.json(out);
+    }
+
+    if (path.length === 1 && path[0] === "confirm") {
+      const body = await req.json();
+      const out = await handleConfirm(body);
+      return NextResponse.json(out);
+    }
+
+    if (path[0] === "s" && path[1] && path[2] === "quote") {
+      const body = await req.json();
+      const out = await submitQuote(path[1], body);
+      return NextResponse.json(out);
+    }
+
+    if (path[0] === "r" && path[1] && path[2] === "select") {
+      const body = await req.json();
+      const out = await selectQuote(path[1], Number(body.quote_id));
+      return NextResponse.json(out);
+    }
+
+    if (path[0] === "r" && path[1] && path[2] === "review") {
+      const body = await req.json();
+      const out = await addReview(path[1], Number(body.rating), body.comment);
+      return NextResponse.json(out);
+    }
+
+    if (path[0] === "r" && path[1] && path[2] === "blast") {
+      // Cloud: slots already created on confirm — no-op success
+      return NextResponse.json({ ok: true, note: "blast handled on confirm (cloud)" });
+    }
+
+    return NextResponse.json({ detail: "not found" }, { status: 404 });
+  } catch (e) {
+    return err(e);
+  }
 }

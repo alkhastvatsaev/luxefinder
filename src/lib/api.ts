@@ -101,7 +101,6 @@ export const luxmatchApi = {
   photoUrl: (path: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    // proxied: /api/luxmatch/uploads/...
     if (path.startsWith("/api/luxmatch")) return path;
     return `${API}${path.replace(/^\/api\/luxmatch/, "")}`;
   },
