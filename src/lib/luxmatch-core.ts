@@ -10,6 +10,7 @@ import {
   type Quote,
   type Rfq,
 } from "./store";
+import { analyzeWithGoogleVision, hasGoogleVisionKey } from "./google-vision";
 
 function productLine(rfq: Rfq): string {
   if (rfq.user_edit?.trim()) return rfq.user_edit.trim().slice(0, 180);
@@ -20,10 +21,21 @@ function productLine(rfq: Rfq): string {
   return String(ai.summary || "article demandé").slice(0, 180);
 }
 
+/** Primary: Google Vision (Lens-like). Fallback: OpenAI. Else mock. */
 export async function analyzeImage(
   bytes: ArrayBuffer,
   contentType: string
 ): Promise<Record<string, unknown>> {
+  if (hasGoogleVisionKey()) {
+    try {
+      const vision = await analyzeWithGoogleVision(bytes);
+      if (vision) return vision;
+    } catch (err) {
+      console.error("google_vision failed", err);
+      // fall through to OpenAI / mock
+    }
+  }
+
   const key = (process.env.OPENAI_API_KEY || "").trim();
   if (!key) {
     return {
@@ -32,10 +44,12 @@ export async function analyzeImage(
       category: "sac / accessoire",
       color: "non déterminée",
       material: "non déterminée",
-      summary:
-        "Description approximative (IA non configurée — ajoute OPENAI_API_KEY). Article de luxe visible sur la photo ; précisez marque et modèle avant confirmation.",
-      confidence: 0.2,
+      summary: hasGoogleVisionKey()
+        ? "Google Vision a échoué. Décrivez le produit manuellement, ou vérifiez GOOGLE_VISION_API_KEY."
+        : "Ajoute GOOGLE_VISION_API_KEY (Google Cloud Vision — proche de Lens) pour une ID précise.",
+      confidence: 0.15,
       mock: true,
+      provider: "none",
     };
   }
 
@@ -82,6 +96,7 @@ export async function analyzeImage(
       summary: String(parsed.summary || ""),
       confidence: Number(parsed.confidence || 0.5),
       mock: false,
+      provider: "openai",
     };
   } catch (err) {
     return {
@@ -93,9 +108,11 @@ export async function analyzeImage(
       summary: `Analyse IA indisponible. Décrivez le produit manuellement. (${err instanceof Error ? err.message : "err"})`,
       confidence: 0,
       mock: true,
+      provider: "none",
     };
   }
 }
+
 
 export async function handleAnalyze(file: File) {
   const buf = await file.arrayBuffer();

@@ -1,5 +1,5 @@
 /**
- * LuxMatch client → same-origin proxy `/api/luxmatch/*` → WAREACH `/api/luxmatch/*`
+ * LuxMatch client → same-origin `/api/luxmatch/*`
  */
 
 const API = "/api/luxmatch";
@@ -28,6 +28,8 @@ export type AiDescription = {
   summary?: string;
   confidence?: number;
   mock?: boolean;
+  provider?: string;
+  best_guess?: string;
 };
 
 export const luxmatchApi = {

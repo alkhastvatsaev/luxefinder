@@ -72,8 +72,12 @@ export default function ConfirmPage() {
 
       {data?.ai_description?.mock && (
         <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-          IA en mode démo (pas de clé OpenAI). Décrivez le produit précisément ci-dessous.
+          ID produit en mode démo — ajoute <code className="text-amber-50">GOOGLE_VISION_API_KEY</code>{" "}
+          (Google Cloud Vision, proche de Lens) pour une reconnaissance précise.
         </p>
+      )}
+      {!data?.ai_description?.mock && data?.ai_description?.provider === "google_vision" && (
+        <p className="mt-4 text-[11px] text-white/35">Identifié via Google Vision (web match · logo · OCR)</p>
       )}
 
       <label className="mt-6 block text-xs uppercase tracking-wide text-white/40">Description</label>
