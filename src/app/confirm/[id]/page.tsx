@@ -12,9 +12,11 @@ type Stored = {
 };
 
 function draftFromAi(ai: AiDescription, pick?: ProductCandidate) {
-  const brand = pick?.brand || ai.brand;
-  const model = pick?.model || ai.model;
-  return [brand, model, ai.color, ai.material, ai.summary].filter(Boolean).join(" — ");
+  if (pick) return [pick.brand, pick.model].filter(Boolean).join(" ");
+  if (ai.product_name) return ai.product_name;
+  const brand = ai.brand;
+  const model = ai.model;
+  return [brand, model].filter(Boolean).join(" ");
 }
 
 export default function ConfirmPage() {
@@ -79,6 +81,14 @@ export default function ConfirmPage() {
   const photo = data ? luxmatchApi.photoUrl(data.photo_url) : "";
   const ai = data?.ai_description;
   const candidates = ai?.candidates || [];
+  const links = ai?.match_links || [];
+
+  const kindLabel: Record<string, string> = {
+    official: "Officiel",
+    resale: "Occasion",
+    shopping: "Boutique",
+    other: "Web",
+  };
 
   return (
     <main className="mx-auto min-h-screen max-w-lg px-5 py-12">
@@ -105,8 +115,8 @@ export default function ConfirmPage() {
       )}
       {!ai?.mock && (
         <p className="mt-4 text-[11px] text-white/35">
-          Pipeline luxe · {ai?.provider || "vision"}
-          {typeof ai?.confidence === "number" ? ` · confiance ${(ai.confidence * 100).toFixed(0)}%` : ""}
+          {ai?.product_name || `${ai?.brand || ""} ${ai?.model || ""}`.trim()}
+          {ai?.provider ? ` · ${ai.provider}` : ""}
         </p>
       )}
       {ai?.authenticity_uncertain && (
@@ -115,9 +125,38 @@ export default function ConfirmPage() {
         </p>
       )}
 
+      {links.length > 0 && (
+        <div className="mt-6">
+          <p className="mb-2 text-xs uppercase tracking-wide text-white/40">
+            Sites trouvés (comme Google Lens)
+          </p>
+          <ol className="space-y-2">
+            {links.map((m) => (
+              <li key={`${m.rank}-${m.link}`}>
+                <a
+                  href={m.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-3 transition hover:border-white/30"
+                >
+                  <span className="mt-0.5 w-5 shrink-0 text-[11px] text-white/35">{m.rank}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-white/90">{m.title}</span>
+                    <span className="mt-0.5 block text-[11px] text-white/40">
+                      {kindLabel[m.kind] || m.kind} · {m.source}
+                      {m.price ? ` · ${m.price}` : ""}
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
       {candidates.length > 0 && (
         <div className="mt-6">
-          <p className="mb-2 text-xs uppercase tracking-wide text-white/40">Hypothèses (top 3)</p>
+          <p className="mb-2 text-xs uppercase tracking-wide text-white/40">Hypothèses modèle</p>
           <div className="flex flex-col gap-2">
             {candidates.map((c, i) => (
               <button

@@ -18,7 +18,7 @@ import {
 } from "./google-vision";
 import { resolveLuxuryProduct, type VisionSignals } from "./luxury-resolve";
 import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product";
-import { fetchGoogleLensByUrl, hasSerpApiKey } from "./google-lens";
+import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
 import { getCachedAnalyze, imageHash, setCachedAnalyze } from "./analyze-cache";
 import { makeRoiCrops } from "./image-crops";
 import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
@@ -112,53 +112,75 @@ async function openaiVisionFallback(
   }
 }
 
-/** Full luxury pipeline: Vision (+crops) + Lens + Product Search + KB + LLM. */
+/** Full luxury pipeline: Lens (primary links) + Vision + KB + LLM. */
 export async function analyzeImage(
   bytes: ArrayBuffer,
   contentType: string,
   opts?: { publicPhotoUrl?: string }
 ): Promise<Record<string, unknown>> {
-  if (!hasGoogleVisionKey()) {
+  // Lens-first when we have a public URL + SerpAPI (exact model + shopping links)
+  let lensProducts: Awaited<ReturnType<typeof fetchGoogleLensByUrl>> = [];
+  if (hasSerpApiKey() && opts?.publicPhotoUrl) {
+    lensProducts = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 20_000 });
+  }
+  const match_links = rankMatchLinks(lensProducts, 10);
+  const lensTitle = bestLensTitle(lensProducts);
+  const parsedLens = parseTitleBrandModel(lensTitle);
+
+  if (!hasGoogleVisionKey() && !lensProducts.length) {
     return openaiVisionFallback(bytes, contentType);
   }
 
   try {
     const signalParts: VisionSignals[] = [];
 
-    // Full frame Vision
-    const full = await extractVisionSignals(bytes);
-    signalParts.push(full);
+    if (hasGoogleVisionKey()) {
+      const full = await extractVisionSignals(bytes);
+      signalParts.push(full);
 
-    // ROI crops (sharp) — parallel secondary Vision
-    const crops = await makeRoiCrops(bytes);
-    if (crops.length) {
-      const cropSignals = await Promise.all(
-        crops.slice(0, 2).map(async (c) => {
-          try {
-            const b64 = Buffer.from(c.bytes).toString("base64");
-            return await extractVisionSignalsFromB64(b64);
-          } catch {
-            return null;
-          }
-        })
-      );
-      for (const s of cropSignals) if (s) signalParts.push(s);
-    }
-
-    let signals = mergeVisionSignals(signalParts);
-
-    // Google Lens (SerpAPI) via public URL when available
-    if (hasSerpApiKey() && opts?.publicPhotoUrl) {
-      const lens = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 14_000 });
-      if (lens.length) {
-        signals = {
-          ...signals,
-          lensProducts: [...(signals.lensProducts || []), ...lens],
-        };
+      const crops = await makeRoiCrops(bytes);
+      if (crops.length) {
+        const cropSignals = await Promise.all(
+          crops.slice(0, 2).map(async (c) => {
+            try {
+              const b64 = Buffer.from(c.bytes).toString("base64");
+              return await extractVisionSignalsFromB64(b64);
+            } catch {
+              return null;
+            }
+          })
+        );
+        for (const s of cropSignals) if (s) signalParts.push(s);
       }
     }
 
-    // Own Product Search catalog
+    let signals: VisionSignals =
+      signalParts.length > 0
+        ? mergeVisionSignals(signalParts)
+        : {
+            logos: [],
+            labels: [],
+            ocr: "",
+            bestGuess: "",
+            webEntities: [],
+            pages: [],
+          };
+
+    if (lensProducts.length) {
+      signals = {
+        ...signals,
+        lensProducts: [...(signals.lensProducts || []), ...lensProducts],
+        pages: [
+          ...signals.pages,
+          ...match_links.map((m) => ({
+            url: m.link,
+            title: m.title,
+            score: m.kind === "official" ? 0.95 : m.kind === "resale" ? 0.8 : 0.6,
+          })),
+        ],
+      };
+    }
+
     if (hasProductSearchConfig()) {
       const hits = await searchLuxuryCatalog(bytes);
       if (hits.length) {
@@ -173,15 +195,66 @@ export async function analyzeImage(
     }
 
     const resolved = resolveLuxuryProduct(signals);
+    // Prefer Lens title for exact model when available
+    if (parsedLens.brand && resolved.brand === "inconnue") resolved.brand = parsedLens.brand;
+    if (parsedLens.model && (!resolved.model || /^(tote|bag|handbag)/i.test(resolved.model))) {
+      resolved.model = parsedLens.model;
+      resolved.candidates = [
+        {
+          brand: parsedLens.brand || resolved.brand,
+          model: parsedLens.model,
+          score: 0.92,
+          source: "google_lens",
+        },
+        ...resolved.candidates.filter((c) => c.model !== parsedLens.model).slice(0, 2),
+      ];
+      resolved.confidence = Math.max(resolved.confidence, 0.9);
+    }
+
     const synth =
       (await synthesizeLuxuryProduct(signals, resolved, {
         imageBytes: bytes,
         contentType,
       })) || fromResolvedOnly(signals, resolved);
 
-    return { ...synth };
+    // Final override: Lens title wins for display model if stronger
+    if (lensTitle && (!synth.model || /^(tote|bag|handbag|sac)/i.test(synth.model))) {
+      const p = parseTitleBrandModel(lensTitle);
+      if (p.brand) synth.brand = p.brand;
+      if (p.model) synth.model = p.model;
+      synth.summary = `Identifié via Google Lens : ${lensTitle}`;
+      synth.provider = `${synth.provider}+lens`;
+      synth.confidence = Math.max(synth.confidence, 0.92);
+    }
+
+    return {
+      ...synth,
+      product_name: [synth.brand, synth.model].filter(Boolean).join(" ").trim() || lensTitle,
+      match_links,
+      lens_title: lensTitle || undefined,
+      provider: lensProducts.length ? `lens+${synth.provider}` : synth.provider,
+    };
   } catch (err) {
     console.error("luxury pipeline failed", err);
+    if (lensProducts.length) {
+      const p = parseTitleBrandModel(lensTitle);
+      return {
+        brand: p.brand || "inconnue",
+        model: p.model || lensTitle,
+        category: "sac / accessoire",
+        color: "non déterminée",
+        material: "non déterminée",
+        summary: `Identifié via Google Lens : ${lensTitle}`,
+        confidence: 0.9,
+        mock: false,
+        provider: "google_lens",
+        product_name: lensTitle,
+        match_links,
+        candidates: [
+          { brand: p.brand || "inconnue", model: p.model || lensTitle, score: 0.9, source: "google_lens" },
+        ],
+      };
+    }
     return openaiVisionFallback(bytes, contentType);
   }
 }

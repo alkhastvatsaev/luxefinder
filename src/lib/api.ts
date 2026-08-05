@@ -26,6 +26,15 @@ export type ProductCandidate = {
   source?: string;
 };
 
+export type MatchLink = {
+  title: string;
+  link: string;
+  source: string;
+  kind: "official" | "resale" | "shopping" | "other";
+  rank: number;
+  price?: string;
+};
+
 export type AiDescription = {
   brand?: string;
   model?: string;
@@ -40,6 +49,9 @@ export type AiDescription = {
   candidates?: ProductCandidate[];
   authenticity_uncertain?: boolean;
   matching_pages?: string[];
+  product_name?: string;
+  match_links?: MatchLink[];
+  lens_title?: string;
 };
 
 export const luxmatchApi = {
