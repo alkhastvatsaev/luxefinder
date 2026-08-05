@@ -7,13 +7,27 @@
   --muted: rgba(245, 240, 232, 0.55);
   --accent: #c4a574;
   --surface: rgba(12, 10, 8, 0.7);
+
+  /* shadcn-compatible tokens used by coverflow */
+  --background: 20 10% 4%;
+  --foreground: 36 33% 94%;
+  --muted-bg: 24 8% 12%;
+  --muted-foreground: 36 15% 65%;
+  --ring: 36 40% 60%;
+  --border: 30 10% 20%;
 }
 
-body {
-  color: var(--ink);
-  background: #0a0908;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100vh;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    color: var(--ink);
+    background: #0a0908;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    min-height: 100vh;
+  }
 }
 
 .font-display {

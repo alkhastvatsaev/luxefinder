@@ -7,14 +7,19 @@
     "build": "next build",
     "start": "next start --port 3001",
     "lint": "next lint",
-    "metrics:vision": "tsx scripts/vision-metrics.ts"
+    "metrics:vision": "tsx scripts/vision-metrics.ts",
+    "sync:sacs": "node scripts/sync-sacs.js"
   },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.28.0",
     "next": "^16.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -22,6 +27,7 @@
     "@types/react-dom": "^19",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.23.8",
     "typescript": "^5"
   }
