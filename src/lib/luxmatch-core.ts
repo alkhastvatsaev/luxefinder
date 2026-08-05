@@ -266,7 +266,11 @@ export async function handleAnalyze(file: File) {
 
   const hash = imageHash(buf);
   const cached = await getCachedAnalyze(hash);
-  if (cached && cached.brand) {
+  const cacheOk =
+    cached &&
+    cached.brand &&
+    (!hasSerpApiKey() || (Array.isArray(cached.match_links) && (cached.match_links as unknown[]).length > 0));
+  if (cacheOk) {
     const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
     const row = createDraft(photoUrl, { ...cached, cached: true });
     await saveRfq(row);

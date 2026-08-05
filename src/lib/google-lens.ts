@@ -121,6 +121,18 @@ export async function fetchGoogleLensByUrl(
   }
 }
 
+function formatPrice(price: unknown): string | undefined {
+  if (price == null) return undefined;
+  if (typeof price === "string" || typeof price === "number") return String(price);
+  if (typeof price === "object") {
+    const p = price as Record<string, unknown>;
+    if (p.value != null) return String(p.value);
+    if (p.extracted_value != null) return String(p.extracted_value);
+    if (p.raw != null) return String(p.raw);
+  }
+  return undefined;
+}
+
 function parseLensResponse(data: Record<string, unknown>): LensProduct[] {
   const out: LensProduct[] = [];
 
@@ -153,7 +165,7 @@ function parseLensResponse(data: Record<string, unknown>): LensProduct[] {
       link,
       score: 0.95,
       kind: "shopping",
-      price: s.price != null ? String(s.price) : undefined,
+      price: formatPrice(s.price),
       thumbnail: String(s.thumbnail || ""),
     });
   }
@@ -169,7 +181,7 @@ function parseLensResponse(data: Record<string, unknown>): LensProduct[] {
       link,
       score: Number(v.position ? Math.max(0.5, 1 - Number(v.position) / 40) : 0.85),
       kind: "visual",
-      price: v.price != null ? String(v.price) : undefined,
+      price: formatPrice(v.price),
       thumbnail: String(v.thumbnail || ""),
     });
   }
@@ -189,8 +201,15 @@ function parseLensResponse(data: Record<string, unknown>): LensProduct[] {
   return out;
 }
 
-/** Rank up to 10 links: official brand first, then resale, then other — skip replicas. */
+/** Rank up to 10 links: prefer title match to product, then official, then resale. */
 export function rankMatchLinks(products: LensProduct[], limit = 10): RankedMatch[] {
+  const best = bestLensTitle(products);
+  const bestNorm = normalizeText(best);
+  // tokens from best title excluding brand noise
+  const tokens = bestNorm
+    .split(" ")
+    .filter((t) => t.length > 2 && !["louis", "vuitton", "chanel", "hermes", "sac", "bag", "handbag", "tote", "leather", "cuir", "noir", "black", "pre", "owned"].includes(t));
+
   const seen = new Set<string>();
   const scored: Array<RankedMatch & { _w: number }> = [];
 
@@ -202,17 +221,28 @@ export function rankMatchLinks(products: LensProduct[], limit = 10): RankedMatch
     if (seen.has(key)) continue;
     seen.add(key);
 
+    const titleNorm = normalizeText(p.title);
+    let relevance = 0;
+    for (const t of tokens) {
+      if (titleNorm.includes(t)) relevance += 25;
+    }
+    // strong boost if model phrase present
+    if (tokens.length && tokens.filter((t) => titleNorm.includes(t)).length >= Math.min(2, tokens.length)) {
+      relevance += 40;
+    }
+
     let kind: RankedMatch["kind"] = "other";
-    let w = (p.score || 0.5) * 10;
+    let w = (p.score || 0.5) * 10 + relevance;
     if (isOfficial(link, p.source)) {
       kind = "official";
-      w += 100;
+      // official only wins if title is relevant; otherwise soft boost
+      w += relevance >= 25 ? 80 : 5;
     } else if (isResale(link, p.source) || TRUSTED_DOMAINS.some((d) => hostOf(link).endsWith(d))) {
       kind = "resale";
-      w += 50;
+      w += 35 + (relevance >= 25 ? 20 : 0);
     } else if (p.kind === "shopping") {
       kind = "shopping";
-      w += 30;
+      w += 20;
     }
 
     scored.push({
@@ -227,6 +257,13 @@ export function rankMatchLinks(products: LensProduct[], limit = 10): RankedMatch
   }
 
   scored.sort((a, b) => b._w - a._w);
+  // Prefer: among top, put best official relevant first if any
+  const officialHit = scored.find((s) => s.kind === "official" && s._w > 50);
+  if (officialHit) {
+    const rest = scored.filter((s) => s !== officialHit);
+    scored.splice(0, scored.length, officialHit, ...rest);
+  }
+
   return scored.slice(0, limit).map((m, i) => {
     const { _w, ...rest } = m;
     return { ...rest, rank: i + 1 };
