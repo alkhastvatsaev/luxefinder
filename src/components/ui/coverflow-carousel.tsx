@@ -38,6 +38,18 @@ export interface CoverflowCarouselProps {
   initialIndex?: number;
   /** Rendered inside slides with kind === "upload". */
   renderUpload?: (active: boolean) => React.ReactNode;
+  /** Allow cards to extend to viewport edges (desktop). */
+  edgeToEdge?: boolean;
+  /** Flat carousel — no 3D tilt, cards stay perfect squares. */
+  flat?: boolean;
+  /** Less vertical padding (for one-screen layouts). */
+  compact?: boolean;
+  /** Snap carousel to this index (e.g. center upload on analyze). */
+  snapToIndex?: number;
+  /** Dim non-focused cards (e.g. during analyze). */
+  focusIndex?: number;
+  /** Disable swipe / drag. */
+  locked?: boolean;
   onIndexChange?: (index: number) => void;
 }
 
@@ -59,6 +71,12 @@ export function CoverflowCarousel({
   cardClassName,
   initialIndex,
   renderUpload,
+  edgeToEdge = false,
+  flat = false,
+  compact = false,
+  snapToIndex,
+  focusIndex,
+  locked = false,
   onIndexChange,
 }: CoverflowCarouselProps) {
   const count = slides.length;
@@ -69,12 +87,14 @@ export function CoverflowCarousel({
   const targetRef = React.useRef(0);
   const widthRef = React.useRef(0);
   const rafRef = React.useRef<number | null>(null);
+  const suppressClickRef = React.useRef(false);
   const dragRef = React.useRef<{
     id: number;
     x: number;
     pos: number;
     v: number;
     t: number;
+    moved: boolean;
   } | null>(null);
 
   const start = initialIndex ?? Math.floor(count / 2);
@@ -101,18 +121,43 @@ export function CoverflowCarousel({
       }
 
       const distance = Math.abs(offset);
-      const ramp = Math.pow(distance, falloff);
-      const tilt = Math.min(rotate * ramp, 82) * Math.sign(offset);
+      const isCenter = distance < 0.5;
+      const isFocused =
+        focusIndex === undefined || Math.abs(index - posRef.current) < 0.5;
+      const slide = slides[index];
 
-      card.style.transform =
-        `translateX(calc(-50% + ${offset * pitch}px)) ` +
-        `translateZ(${-depth * width * ramp}px) rotateY(${-tilt}deg)`;
+      if (flat) {
+        card.style.transform = `translateX(calc(-50% + ${offset * pitch}px))`;
+      } else {
+        const ramp = Math.pow(distance, falloff);
+        const tilt = Math.min(rotate * ramp, 55) * Math.sign(offset);
+        const scale = Math.max(0.82, 1 - distance * 0.04);
+
+        card.style.transform =
+          `translateX(calc(-50% + ${offset * pitch}px)) ` +
+          `translateZ(${-depth * width * ramp}px) rotateY(${-tilt}deg) scale(${scale})`;
+      }
 
       const edge = loop ? Math.min(1, Math.max(0, count / 2 - distance)) : 1;
-      card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
+      let opacity = Math.max(0, 1 - fade * distance) * edge;
+      if (focusIndex !== undefined && !isFocused) opacity *= 0.28;
+      card.style.opacity = String(opacity);
       card.style.zIndex = String(100 - Math.round(distance));
+
+      if (locked) {
+        card.style.pointerEvents = "none";
+        card.style.cursor = "default";
+      } else if (slide?.kind === "upload" && isCenter) {
+        // Swipe through card; only Lens button is clickable (pointer-events-auto inside)
+        card.style.pointerEvents = "none";
+        card.style.cursor = "default";
+      } else {
+        // All product cards: let touches reach the frame so swipe works on side photos
+        card.style.pointerEvents = "none";
+        card.style.cursor = "default";
+      }
     });
-  }, [count, depth, fade, falloff, gap, loop, rotate]);
+  }, [count, depth, fade, falloff, flat, focusIndex, gap, locked, loop, rotate, slides]);
 
   const settle = React.useCallback(
     (target: number) => {
@@ -146,12 +191,20 @@ export function CoverflowCarousel({
 
   const goTo = React.useCallback(
     (index: number) => {
-      const target = loop
-        ? index + Math.round((targetRef.current - index) / count) * count
-        : index;
-      settle(clamp(target));
+      if (locked) return;
+      if (!loop) {
+        settle(clamp(index));
+        return;
+      }
+      const current = posRef.current;
+      const base = ((index % count) + count) % count;
+      const currentBase = indexAt(current);
+      let diff = base - currentBase;
+      if (diff > count / 2) diff -= count;
+      if (diff < -count / 2) diff += count;
+      settle(current + diff);
     },
-    [clamp, count, loop, settle]
+    [clamp, count, indexAt, locked, loop, settle]
   );
 
   const nudge = React.useCallback(
@@ -159,11 +212,21 @@ export function CoverflowCarousel({
     [clamp, settle]
   );
 
+  React.useEffect(() => {
+    if (snapToIndex !== undefined) goTo(snapToIndex);
+  }, [goTo, snapToIndex]);
+
+  React.useEffect(() => {
+    paint();
+  }, [focusIndex, paint]);
+
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (locked) return;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
+    suppressClickRef.current = false;
     event.currentTarget.setPointerCapture(event.pointerId);
     targetRef.current = posRef.current;
     dragRef.current = {
@@ -172,6 +235,7 @@ export function CoverflowCarousel({
       pos: posRef.current,
       v: 0,
       t: performance.now(),
+      moved: false,
     };
   };
 
@@ -184,7 +248,12 @@ export function CoverflowCarousel({
 
     const now = performance.now();
     const previous = posRef.current;
-    posRef.current = clamp(drag.pos - (event.clientX - drag.x) / pitch);
+    const deltaX = event.clientX - drag.x;
+    if (Math.abs(deltaX) > 6) {
+      drag.moved = true;
+      suppressClickRef.current = true;
+    }
+    posRef.current = clamp(drag.pos - deltaX / pitch);
     drag.v = ((posRef.current - previous) / Math.max(now - drag.t, 1)) * 1000;
     drag.t = now;
 
@@ -200,6 +269,33 @@ export function CoverflowCarousel({
     const drag = dragRef.current;
     if (!drag || drag.id !== event.pointerId) return;
     dragRef.current = null;
+
+    // Tap (no swipe): center the card under the finger
+    if (!drag.moved && !locked) {
+      let bestIndex: number | null = null;
+      let bestZ = -1;
+      cardRefs.current.forEach((card, index) => {
+        if (!card) return;
+        const r = card.getBoundingClientRect();
+        if (
+          event.clientX >= r.left &&
+          event.clientX <= r.right &&
+          event.clientY >= r.top &&
+          event.clientY <= r.bottom
+        ) {
+          const z = Number(card.style.zIndex) || 0;
+          if (z > bestZ) {
+            bestZ = z;
+            bestIndex = index;
+          }
+        }
+      });
+      if (bestIndex != null && bestIndex !== indexAt(Math.round(posRef.current))) {
+        goTo(bestIndex);
+        return;
+      }
+    }
+
     const carried = Math.max(-2, Math.min(2, drag.v * 0.18));
     settle(clamp(Math.round(posRef.current + carried)));
   };
@@ -233,6 +329,49 @@ export function CoverflowCarousel({
     []
   );
 
+  const wheelCooldownRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame) return;
+
+    const onWheel = (event: WheelEvent) => {
+      if (locked) return;
+
+      const absX = Math.abs(event.deltaX);
+      const absY = Math.abs(event.deltaY);
+      const horizontal = absX > 1 || (event.shiftKey && absY > 1);
+      if (!horizontal) return;
+
+      // Block browser back/forward
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Ignore trackpad inertia / residual events after a snap
+      if (Date.now() < wheelCooldownRef.current) return;
+
+      const delta = absX >= absY ? event.deltaX : event.deltaY;
+      // Need a clear intentional flick (ignore tiny inertia ticks)
+      if (Math.abs(delta) < 12) return;
+
+      // ~0.5s lock — then ready again without moving the mouse
+      wheelCooldownRef.current = Date.now() + 480;
+
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
+      const dir = delta > 0 ? 1 : -1;
+      settle(clamp(Math.round(targetRef.current) + dir));
+    };
+
+    frame.addEventListener("wheel", onWheel, { passive: false, capture: true });
+    return () => {
+      frame.removeEventListener("wheel", onWheel, { capture: true } as AddEventListenerOptions);
+    };
+  }, [clamp, locked, settle]);
+
   const active = slides[selected];
 
   return (
@@ -260,17 +399,26 @@ export function CoverflowCarousel({
               nudge(1);
             }
           }}
-          className="cursor-grab overflow-hidden py-10 outline-none ring-ring focus-visible:ring-2 active:cursor-grabbing"
-          style={{
-            perspective: `calc(var(--cf-card) * ${perspective})`,
-            touchAction: "pan-y",
-          }}
+          className={cn(
+            "outline-none ring-ring focus-visible:ring-2 [overscroll-behavior-x:none]",
+            compact ? "py-2" : "py-6",
+            locked ? "cursor-default" : "cursor-grab active:cursor-grabbing",
+            edgeToEdge ? "overflow-visible" : "overflow-hidden"
+          )}
+          style={
+            flat
+              ? { touchAction: "none" }
+              : {
+                  perspective: `calc(var(--cf-card) * ${perspective})`,
+                  touchAction: "none",
+                }
+          }
         >
           <div
             className="relative select-none"
             style={{
               height: "var(--cf-card)",
-              transformStyle: "preserve-3d",
+              transformStyle: flat ? undefined : "preserve-3d",
             }}
           >
             {slides.map((slide, index) => (
@@ -283,59 +431,60 @@ export function CoverflowCarousel({
                 aria-roledescription="slide"
                 aria-label={`${index + 1} of ${count}`}
                   className={cn(
-                  "absolute left-1/2 top-0 aspect-square overflow-hidden rounded-2xl bg-muted shadow-xl will-change-transform",
-                  slide.kind === "upload" && "border border-dashed border-accent/50 bg-background/80",
+                  "absolute left-1/2 top-0 will-change-transform",
+                  slide.kind === "upload"
+                    ? "overflow-visible bg-transparent shadow-none ring-0"
+                    : "overflow-hidden rounded-[1.75rem] bg-white shadow-card ring-1 ring-black/[0.04]",
                   cardClassName
                 )}
-                style={{ width: "var(--cf-card)" }}
-                onClick={() => {
-                  if (Math.abs(index - selected) > 0) goTo(index);
-                }}
+                style={{ width: "var(--cf-card)", height: "var(--cf-card)" }}
               >
                 {slide.kind === "upload" && renderUpload ? (
                   renderUpload(index === selected)
                 ) : slide.src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={slide.src}
-                    alt={slide.alt}
-                    draggable={false}
-                    className="h-full w-full select-none object-cover"
-                  />
+                  <div className="pointer-events-none relative h-full w-full bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={slide.src}
+                      alt={slide.alt}
+                      draggable={false}
+                      className="absolute inset-0 h-full w-full select-none object-contain bg-white"
+                    />
+                  </div>
                 ) : null}
               </div>
             ))}
           </div>
         </div>
 
-        {showNavigation && (
+        {showNavigation && !locked && (
           <>
             <button
               type="button"
               aria-label="Previous slide"
               onClick={() => nudge(-1)}
-              className="absolute left-3 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-background/70 p-2 text-foreground backdrop-blur transition hover:bg-background"
+              className="absolute left-3 top-1/2 z-[200] hidden -translate-y-1/2 rounded-full glass p-2.5 text-foreground shadow-card transition hover:scale-105 active:scale-95 md:flex lg:left-8"
             >
-              <ChevronLeft className="size-5" />
+              <ChevronLeft className="size-5" strokeWidth={1.5} />
             </button>
             <button
               type="button"
               aria-label="Next slide"
               onClick={() => nudge(1)}
-              className="absolute right-3 top-1/2 z-[200] -translate-y-1/2 rounded-full bg-background/70 p-2 text-foreground backdrop-blur transition hover:bg-background"
+              className="absolute right-3 top-1/2 z-[200] hidden -translate-y-1/2 rounded-full glass p-2.5 text-foreground shadow-card transition hover:scale-105 active:scale-95 md:flex lg:right-8"
             >
-              <ChevronRight className="size-5" />
+              <ChevronRight className="size-5" strokeWidth={1.5} />
             </button>
           </>
         )}
       </div>
 
-      {showCaption && active?.title && (
-        <div key={selected} className="mt-2 flex flex-col items-center px-6 duration-300 animate-in fade-in">
-          <p className="text-[15px] font-semibold tracking-tight text-foreground">{active.title}</p>
-          {active.subtitle && (
-            <p className="mt-1 text-[13px] text-muted-foreground">{active.subtitle}</p>
-          )}
+      {showCaption && active?.kind !== "upload" && active?.title && (
+        <div
+          key={selected}
+          className="mt-1 flex flex-col items-center px-6 duration-300 animate-in fade-in"
+        >
+          <p className="text-[13px] font-medium tracking-tight text-foreground/80">{active.title}</p>
         </div>
       )}
 

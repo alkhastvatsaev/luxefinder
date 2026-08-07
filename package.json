@@ -1,20 +1,26 @@
 {
-  "name": "luxmatch",
+  "name": "luxefinder",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3001",
-    "build": "next build",
+    "dev": "npm run sync:pics && next dev --turbopack --port 3001",
+    "build": "npm run sync:pics && next build",
     "start": "next start --port 3001",
     "lint": "next lint",
     "metrics:vision": "tsx scripts/vision-metrics.ts",
-    "sync:sacs": "node scripts/sync-sacs.js"
+    "sync:pics": "node scripts/sync-pics.js",
+    "audit:pics": "node scripts/audit-pics.js",
+    "sync:sacs": "npm run sync:pics",
+    "indexnow": "tsx scripts/indexnow-submit.ts",
+    "seo:export-urls": "tsx scripts/export-seo-urls.ts"
   },
   "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
     "@vercel/blob": "^2.6.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.28.0",
+    "motion": "^13.0.0",
     "next": "^16.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

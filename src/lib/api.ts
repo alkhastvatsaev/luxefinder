@@ -1,8 +1,8 @@
 /**
- * LuxMatch client → same-origin `/api/luxmatch/*`
+ * LuxeFinder client → same-origin `/api/luxefinder/*`
  */
 
-const API = "/api/luxmatch";
+const API = "/api/luxefinder";
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, { ...init, cache: "no-store" });
@@ -54,7 +54,7 @@ export type AiDescription = {
   lens_title?: string;
 };
 
-export const luxmatchApi = {
+export const luxefinderApi = {
   analyze: async (file: File) => {
     const fd = new FormData();
     fd.append("file", file);
@@ -75,9 +75,34 @@ export const luxmatchApi = {
       ai_description: AiDescription;
     }>;
   },
+  suggest: (q: string) =>
+    api<{
+      ok: boolean;
+      query: string;
+      suggestions: Array<{
+        label: string;
+        brand?: string;
+        model?: string;
+        source: string;
+      }>;
+    }>(`/suggest?q=${encodeURIComponent(q)}`),
+  search: (query: string) =>
+    api<{
+      ok: boolean;
+      request_id: number;
+      client_token: string;
+      photo_url: string;
+      ai_description: AiDescription;
+    }>("/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    }),
   confirm: (body: {
     request_id: number;
     user_edit?: string;
+    client_budget?: number;
+    client_budget_currency?: string;
     contact_email?: string;
     contact_telegram?: string;
   }) =>
@@ -125,7 +150,7 @@ export const luxmatchApi = {
   photoUrl: (path: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    if (path.startsWith("/api/luxmatch")) return path;
-    return `${API}${path.replace(/^\/api\/luxmatch/, "")}`;
+    if (path.startsWith("/api/luxefinder")) return path;
+    return `${API}${path.replace(/^\/api\/luxefinder/, "")}`;
   },
 };

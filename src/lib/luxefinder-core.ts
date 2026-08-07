@@ -19,7 +19,9 @@ import {
 import { resolveLuxuryProduct, type VisionSignals } from "./luxury-resolve";
 import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product";
 import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
-import { getCachedAnalyze, imageHash, setCachedAnalyze } from "./analyze-cache";
+import { fetchGoogleShoppingProducts, fetchProductThumbnail } from "./google-text-search";
+import { suggestLuxuryModels } from "./luxury-kb";
+import { getCachedAnalyzeSmart, setCachedAnalyzeSmart, contentFingerprint, getCachedLens, setCachedLens } from "./analyze-cache";
 import { makeRoiCrops } from "./image-crops";
 import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
 
@@ -116,12 +118,23 @@ async function openaiVisionFallback(
 export async function analyzeImage(
   bytes: ArrayBuffer,
   contentType: string,
-  opts?: { publicPhotoUrl?: string }
+  opts?: { publicPhotoUrl?: string; cacheKey?: string }
 ): Promise<Record<string, unknown>> {
   // Lens-first when we have a public URL + SerpAPI (exact model + shopping links)
   let lensProducts: Awaited<ReturnType<typeof fetchGoogleLensByUrl>> = [];
   if (hasSerpApiKey() && opts?.publicPhotoUrl) {
-    lensProducts = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 20_000 });
+    const lensKey = opts.cacheKey || (await contentFingerprint(bytes));
+    const cachedLens = await getCachedLens(lensKey);
+    if (cachedLens?.length) {
+      lensProducts = cachedLens as Awaited<ReturnType<typeof fetchGoogleLensByUrl>>;
+      console.log("[analyze] Lens cache HIT", lensKey.slice(0, 12));
+    } else {
+      lensProducts = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 20_000 });
+      if (lensProducts.length) {
+        await setCachedLens(lensKey, lensProducts);
+        console.log("[analyze] Lens cache MISS → stored", lensKey.slice(0, 12));
+      }
+    }
   }
   const match_links = rankMatchLinks(lensProducts, 10);
   const lensTitle = bestLensTitle(lensProducts);
@@ -264,15 +277,16 @@ export async function handleAnalyze(file: File) {
   if (buf.byteLength < 100) throw new Error("empty image");
   if (buf.byteLength > 12_000_000) throw new Error("image too large (max 12MB)");
 
-  const hash = imageHash(buf);
-  const cached = await getCachedAnalyze(hash);
+  const hit = await getCachedAnalyzeSmart(buf);
+  const cached = hit?.result;
   const cacheOk =
     cached &&
     cached.brand &&
     (!hasSerpApiKey() || (Array.isArray(cached.match_links) && (cached.match_links as unknown[]).length > 0));
-  if (cacheOk) {
+  if (cacheOk && cached) {
+    console.log("[analyze] full cache HIT via", hit!.via);
     const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
-    const row = createDraft(photoUrl, { ...cached, cached: true });
+    const row = createDraft(photoUrl, { ...cached, cached: true, cache_via: hit!.via });
     await saveRfq(row);
     return {
       ok: true,
@@ -286,8 +300,13 @@ export async function handleAnalyze(file: File) {
   }
 
   const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
-  const ai = await analyzeImage(buf, file.type || "image/jpeg", { publicPhotoUrl: photoUrl });
-  await setCachedAnalyze(hash, ai);
+  const fp = await contentFingerprint(buf);
+  const ai = await analyzeImage(buf, file.type || "image/jpeg", {
+    publicPhotoUrl: photoUrl,
+    cacheKey: fp,
+  });
+  await setCachedAnalyzeSmart(buf, ai);
+  console.log("[analyze] full cache MISS → stored");
   const row = createDraft(photoUrl, ai);
   await saveRfq(row);
   return {
@@ -300,10 +319,86 @@ export async function handleAnalyze(file: File) {
   };
 }
 
+/** Typeahead: concrete luxury models from the KB only (no random Google queries). */
+export async function handleSuggest(query: string) {
+  const q = String(query || "").trim().slice(0, 120);
+  if (q.length < 2) return { ok: true, query: q, suggestions: [] as Array<Record<string, unknown>> };
+
+  const kb = suggestLuxuryModels(q, 8);
+  return {
+    ok: true,
+    query: q,
+    suggestions: kb.map((s) => ({
+      label: s.label,
+      brand: s.brand,
+      model: s.model,
+      source: "kb",
+    })),
+  };
+}
+
+/** Text path: only concrete KB articles; show product image in the center card. */
+export async function handleTextSearch(query: string) {
+  const q = String(query || "").trim().slice(0, 200);
+  if (q.length < 2) {
+    throw Object.assign(new Error("Requête trop courte"), { status: 400 });
+  }
+
+  const kb = suggestLuxuryModels(q, 8);
+  const top = kb[0];
+  if (!top || top.score < 40) {
+    throw Object.assign(
+      new Error("Choisissez un modèle dans les suggestions"),
+      { status: 400 }
+    );
+  }
+
+  const title = `${top.brand} ${top.model}`;
+  const products = hasSerpApiKey() ? await fetchGoogleShoppingProducts(title, 8) : [];
+  let thumbnail = products.find((p) => p.thumbnail)?.thumbnail || "";
+  if (!thumbnail && hasSerpApiKey()) {
+    thumbnail = await fetchProductThumbnail(title);
+  }
+  const match_links = products.map(({ thumbnail: _t, ...rest }) => rest);
+
+  const ai: Record<string, unknown> = {
+    brand: top.brand,
+    model: top.model,
+    product_name: title,
+    lens_title: title,
+    best_guess: title,
+    summary: title,
+    confidence: 0.9,
+    provider: "text",
+    category: top.category || "sac",
+    candidates: kb.slice(0, 5).map((s, i) => ({
+      brand: s.brand,
+      model: s.model,
+      score: Math.max(0.4, 1 - i * 0.08),
+      source: "kb",
+    })),
+    match_links,
+    product_image: thumbnail || undefined,
+  };
+
+  const row = createDraft(thumbnail, ai);
+  await saveRfq(row);
+
+  return {
+    ok: true,
+    request_id: row.id,
+    client_token: row.client_token,
+    photo_url: row.photo_url,
+    ai_description: row.ai_description,
+    status: row.status,
+  };
+}
 
 export async function handleConfirm(body: {
   request_id: number;
   user_edit?: string;
+  client_budget?: number;
+  client_budget_currency?: string;
   contact_email?: string;
   contact_telegram?: string;
   start_blast?: boolean;
@@ -312,6 +407,12 @@ export async function handleConfirm(body: {
   if (!row) throw Object.assign(new Error("request not found"), { status: 404 });
 
   if (body.user_edit != null) row.user_edit = body.user_edit.trim().slice(0, 4000);
+  if (body.client_budget != null && !Number.isNaN(body.client_budget)) {
+    row.client_budget = Math.max(0, Number(body.client_budget));
+  }
+  if (body.client_budget_currency) {
+    row.client_budget_currency = body.client_budget_currency.trim().slice(0, 8).toUpperCase();
+  }
   if (body.contact_email) row.contact_email = body.contact_email.trim().slice(0, 255);
   if (body.contact_telegram) {
     row.contact_telegram = body.contact_telegram.trim().replace(/^@/, "").slice(0, 128);
@@ -324,7 +425,10 @@ export async function handleConfirm(body: {
   for (const o of row.outreaches) o.wa_status = "link_ready";
   await saveRfq(row);
 
-  const base = (process.env.LUXMATCH_PUBLIC_URL || "https://luxmatch-six.vercel.app").replace(/\/$/, "");
+  const base = (
+    process.env.LUXEFINDER_PUBLIC_URL ||
+    "https://luxefinder.app"
+  ).replace(/\/$/, "");
   return {
     ok: true,
     request_id: row.id,
@@ -340,13 +444,18 @@ export async function handleConfirm(body: {
 export async function clientView(token: string) {
   const req = await getRfqByClientToken(token);
   if (!req) return null;
-  const base = (process.env.LUXMATCH_PUBLIC_URL || "https://luxmatch-six.vercel.app").replace(/\/$/, "");
+  const base = (
+    process.env.LUXEFINDER_PUBLIC_URL ||
+    "https://luxefinder.app"
+  ).replace(/\/$/, "");
   return {
     id: req.id,
     status: req.status,
     photo_url: req.photo_url,
     ai_description: req.ai_description,
     user_edit: req.user_edit,
+    client_budget: req.client_budget,
+    client_budget_currency: req.client_budget_currency,
     blast_error: req.blast_error,
     selected_quote_id: req.selected_quote_id,
     outreach: req.outreaches.map((o) => ({
@@ -383,6 +492,8 @@ export async function supplierView(token: string) {
     outreach_id: outreach.id,
     request_id: rfq.id,
     product: productLine(rfq),
+    client_budget: rfq.client_budget,
+    client_budget_currency: rfq.client_budget_currency,
     ai_description: rfq.ai_description,
     photo_url: rfq.photo_url,
     already_quoted: Boolean(existing),
