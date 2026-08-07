@@ -81,6 +81,12 @@ interface MarqueeAlongSvgPathProps {
   zIndexBase?: number;
   zIndexRange?: number;
 
+  /**
+   * Soft fade (opacity + slight scale) near path start/end, as % of the path.
+   * Softens the “pop in / pop out” when items wrap. 0 disables.
+   */
+  fadeEnds?: number;
+
   responsive?: boolean;
 }
 
@@ -102,6 +108,7 @@ function MarqueeItem({
   grabCursor,
   enableRollingZIndex,
   calculateZIndex,
+  fadeEnds,
   isHovered,
 }: {
   item: MarqueeItemMeta;
@@ -113,6 +120,7 @@ function MarqueeItem({
   grabCursor: boolean;
   enableRollingZIndex: boolean;
   calculateZIndex: (offsetDistance: number) => number | undefined;
+  fadeEnds: number;
   isHovered: React.MutableRefObject<boolean>;
 }) {
   const { child, repeatIndex, itemIndex } = item;
@@ -129,14 +137,31 @@ function MarqueeItem({
     calculateZIndex(value)
   );
 
+  const fadeZone = Math.max(0, Math.min(fadeEnds, 40));
+  const opacity = useTransform(
+    currentOffsetDistance,
+    fadeZone > 0
+      ? [0, fadeZone, 100 - fadeZone, 100]
+      : [0, 100],
+    fadeZone > 0 ? [0, 1, 1, 0] : [1, 1]
+  );
+  const scale = useTransform(
+    currentOffsetDistance,
+    fadeZone > 0
+      ? [0, fadeZone, 100 - fadeZone, 100]
+      : [0, 100],
+    fadeZone > 0 ? [0.88, 1, 1, 0.88] : [1, 1]
+  );
+
   useEffect(() => {
-    const unsubscribe = itemOffset.on("change", (value: string) => {
+    const sync = (value: string) => {
       const match = value.match(/^([\d.]+)%$/);
       if (match?.[1]) {
         currentOffsetDistance.set(parseFloat(match[1]));
       }
-    });
-    return unsubscribe;
+    };
+    sync(itemOffset.get());
+    return itemOffset.on("change", sync);
   }, [itemOffset, currentOffsetDistance]);
 
   return (
@@ -148,9 +173,12 @@ function MarqueeItem({
       style={{
         offsetPath: `path('${path}')`,
         offsetDistance: itemOffset,
+        opacity,
+        scale,
         zIndex: enableRollingZIndex ? zIndex : undefined,
-        willChange: "offset-distance",
+        willChange: "offset-distance, opacity, transform",
         backfaceVisibility: "hidden",
+        pointerEvents: draggable ? "auto" : "none",
       }}
       aria-hidden={repeatIndex > 0}
       onMouseEnter={() => {
@@ -194,6 +222,7 @@ const MarqueeAlongSvgPath = ({
   enableRollingZIndex = true,
   zIndexBase = 1,
   zIndexRange = 10,
+  fadeEnds = 0,
   responsive = false,
 }: MarqueeAlongSvgPathProps) => {
   const container = useRef<HTMLDivElement>(null);
@@ -346,6 +375,9 @@ const MarqueeAlongSvgPath = ({
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!draggable) return;
+    // Only primary button / touch
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 
     if (grabCursor) {
@@ -362,9 +394,8 @@ const MarqueeAlongSvgPath = ({
 
     const currentPosition = { x: e.clientX, y: e.clientY };
     const deltaX = currentPosition.x - lastPointerPosition.current.x;
-    const deltaY = currentPosition.y - lastPointerPosition.current.y;
-    const delta = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    const projectedDelta = deltaX > 0 ? delta : -delta;
+    // Path is mostly horizontal — bias X, keep a little Y so diagonal drags feel natural
+    const projectedDelta = deltaX + (currentPosition.y - lastPointerPosition.current.y) * 0.25;
 
     dragVelocity.current = projectedDelta * dragSensitivity;
     lastPointerPosition.current = currentPosition;
@@ -372,7 +403,11 @@ const MarqueeAlongSvgPath = ({
 
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!draggable) return;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
     isDragging.current = false;
 
     if (grabCursor) {
@@ -387,7 +422,12 @@ const MarqueeAlongSvgPath = ({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className={cn("relative", className)}
+      className={cn(
+        "relative",
+        draggable && grabCursor && "cursor-grab",
+        className
+      )}
+      style={draggable ? { touchAction: "none", userSelect: "none" } : undefined}
     >
       <div
         ref={marqueeContainerRef}
@@ -423,6 +463,7 @@ const MarqueeAlongSvgPath = ({
             grabCursor={grabCursor}
             enableRollingZIndex={enableRollingZIndex}
             calculateZIndex={calculateZIndex}
+            fadeEnds={fadeEnds}
             isHovered={isHovered}
           />
         ))}

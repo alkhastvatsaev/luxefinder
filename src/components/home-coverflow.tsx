@@ -185,15 +185,21 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           {showBagMarquee && bagSlides.length > 0 && (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-1/2 z-0 h-[min(52vh,360px)] w-full -translate-y-1/2 overflow-visible opacity-90"
+              className="absolute inset-x-0 top-1/2 z-0 h-[min(52vh,360px)] w-full -translate-y-1/2 overflow-visible"
             >
               <MarqueeAlongSvgPath
                 path={BAG_PATH}
                 viewBox="0 0 996 330"
-                baseVelocity={7}
-                slowdownOnHover={false}
-                draggable={false}
+                baseVelocity={6}
+                slowdownOnHover
+                slowDownFactor={0.25}
+                draggable
+                grabCursor
+                dragSensitivity={0.12}
+                dragVelocityDecay={0.94}
+                dragAwareDirection
                 repeat={2}
+                fadeEnds={16}
                 className="h-full w-full scale-110"
                 responsive
                 enableRollingZIndex
@@ -203,13 +209,13 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                 {bagSlides.map((bag, i) => (
                   <div
                     key={`${bag.src}-${i}`}
-                    className="h-20 w-20 overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/[0.04] md:h-24 md:w-24"
+                    className="h-20 w-20 select-none overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/[0.04] md:h-24 md:w-24"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={bag.src}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="pointer-events-none h-full w-full object-cover"
                       draggable={false}
                     />
                   </div>
@@ -218,7 +224,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             </div>
           )}
 
-          {/* Lens CTA — foreground, always centered */}
+          {/* Lens CTA — foreground, always centered (above marquee drag layer) */}
           <div
             className="relative z-20"
             style={{ width: lensSize, height: lensSize }}
