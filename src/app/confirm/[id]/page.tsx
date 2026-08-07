@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AiDescription, ProductCandidate, luxmatchApi } from "@/lib/api";
+import { ArrowUpRight, Check, Loader2 } from "lucide-react";
+import { BrandMark } from "@/components/ui/brand-mark";
+import { AiDescription, ProductCandidate, luxefinderApi } from "@/lib/api";
 
 type Stored = {
   request_id: number;
@@ -14,9 +17,7 @@ type Stored = {
 function draftFromAi(ai: AiDescription, pick?: ProductCandidate) {
   if (pick) return [pick.brand, pick.model].filter(Boolean).join(" ");
   if (ai.product_name) return ai.product_name;
-  const brand = ai.brand;
-  const model = ai.model;
-  return [brand, model].filter(Boolean).join(" ");
+  return [ai.brand, ai.model].filter(Boolean).join(" ");
 }
 
 export default function ConfirmPage() {
@@ -26,15 +27,13 @@ export default function ConfirmPage() {
   const [data, setData] = useState<Stored | null>(null);
   const [edit, setEdit] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [email, setEmail] = useState("");
-  const [telegram, setTelegram] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem(`luxmatch:${id}`);
+    const raw = sessionStorage.getItem(`luxefinder:${id}`);
     if (!raw) {
-      setError("Session expirée — déposez à nouveau une photo.");
+      setError("Session expirée");
       return;
     }
     const parsed = JSON.parse(raw) as Stored;
@@ -57,11 +56,9 @@ export default function ConfirmPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await luxmatchApi.confirm({
+      const res = await luxefinderApi.confirm({
         request_id: data.request_id,
         user_edit: edit,
-        contact_email: email || undefined,
-        contact_telegram: telegram || undefined,
       });
       router.push(`/r/${res.client_token}`);
     } catch (e) {
@@ -72,150 +69,126 @@ export default function ConfirmPage() {
 
   if (!data && !error) {
     return (
-      <main className="flex min-h-screen items-center justify-center text-sm text-white/50">
-        Chargement…
+      <main className="flex min-h-[100dvh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-foreground/30" />
       </main>
     );
   }
 
-  const photo = data ? luxmatchApi.photoUrl(data.photo_url) : "";
+  const photo = data ? luxefinderApi.photoUrl(data.photo_url) : "";
   const ai = data?.ai_description;
   const candidates = ai?.candidates || [];
-  const links = ai?.match_links || [];
+  const links = (ai?.match_links || []).slice(0, 10);
 
-  const kindLabel: Record<string, string> = {
-    official: "Officiel",
-    resale: "Occasion",
-    shopping: "Boutique",
-    other: "Web",
+  const kindDot: Record<string, string> = {
+    official: "bg-foreground",
+    resale: "bg-foreground/40",
+    shopping: "bg-foreground/25",
+    other: "bg-foreground/15",
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-lg px-5 py-12">
-      <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--accent)]">LuxMatch · Étape 1</p>
-      <h1 className="font-display mt-3 text-3xl font-semibold">C’est bien ça ?</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        Choisissez la meilleure hypothèse, corrigez si besoin, puis confirmez.
-      </p>
+    <main className="mx-auto min-h-[100dvh] max-w-lg px-5 pb-28 pt-6">
+      <header className="mb-8 flex items-center justify-between">
+        <BrandMark />
+        <span className="text-[12px] text-muted-foreground">1 / 2</span>
+      </header>
 
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={photo}
-          alt="Produit"
-          className="mt-8 max-h-64 w-full rounded-2xl object-contain bg-black/40"
+          alt=""
+          className="mx-auto mb-8 h-48 w-48 rounded-[1.75rem] object-cover shadow-soft ring-1 ring-black/[0.04] animate-rise"
         />
       )}
 
-      {ai?.mock && (
-        <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-          Mode démo — configure <code className="text-amber-50">GOOGLE_VISION_API_KEY</code> pour une
-          ID précise.
-        </p>
-      )}
-      {!ai?.mock && (
-        <p className="mt-4 text-[11px] text-white/35">
-          {ai?.product_name || `${ai?.brand || ""} ${ai?.model || ""}`.trim()}
-          {ai?.provider ? ` · ${ai.provider}` : ""}
-        </p>
-      )}
-      {ai?.authenticity_uncertain && (
-        <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-          Beaucoup de pages réplique détectées — vérifiez le modèle avant envoi.
-        </p>
+      <input
+        value={edit}
+        onChange={(e) => setEdit(e.target.value)}
+        aria-label="Nom du produit"
+        className="animate-rise w-full bg-transparent text-center text-[28px] font-semibold leading-tight tracking-[-0.03em] text-foreground outline-none placeholder:text-foreground/20"
+        placeholder="Nom du produit"
+      />
+
+      {candidates.length > 1 && (
+        <div className="animate-rise-delay mt-6 flex flex-wrap justify-center gap-2">
+          {candidates.map((c, i) => (
+            <button
+              key={`${c.brand}-${c.model}-${i}`}
+              type="button"
+              onClick={() => pickCandidate(i)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition ${
+                selectedIdx === i
+                  ? "bg-foreground text-white"
+                  : "bg-muted text-foreground/70 hover:bg-black/[0.06]"
+              }`}
+            >
+              {c.model || c.brand}
+            </button>
+          ))}
+        </div>
       )}
 
       {links.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-2 text-xs uppercase tracking-wide text-white/40">
-            Sites trouvés (comme Google Lens)
-          </p>
-          <ol className="space-y-2">
+        <section className="animate-rise-delay mt-10">
+          <ul className="divide-y divide-black/[0.06] overflow-hidden rounded-[1.5rem] bg-muted/80 ring-1 ring-black/[0.03]">
             {links.map((m) => (
               <li key={`${m.rank}-${m.link}`}>
                 <a
                   href={m.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-start gap-3 rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-3 transition hover:border-white/30"
+                  className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-white/60 active:bg-white"
                 >
-                  <span className="mt-0.5 w-5 shrink-0 text-[11px] text-white/35">{m.rank}</span>
+                  <span className={`size-1.5 shrink-0 rounded-full ${kindDot[m.kind] || kindDot.other}`} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-white/90">{m.title}</span>
-                    <span className="mt-0.5 block text-[11px] text-white/40">
-                      {kindLabel[m.kind] || m.kind} · {m.source}
-                      {m.price ? ` · ${m.price}` : ""}
+                    <span className="block truncate text-[14px] font-medium tracking-tight text-foreground">
+                      {m.source}
+                    </span>
+                    <span className="block truncate text-[12px] text-muted-foreground">
+                      {m.title}
                     </span>
                   </span>
+                  {m.price && (
+                    <span className="shrink-0 text-[12px] font-medium text-foreground/70">{m.price}</span>
+                  )}
+                  <ArrowUpRight className="size-4 shrink-0 text-foreground/25" strokeWidth={1.5} />
                 </a>
               </li>
             ))}
-          </ol>
-        </div>
+          </ul>
+        </section>
       )}
 
-      {candidates.length > 0 && (
-        <div className="mt-6">
-          <p className="mb-2 text-xs uppercase tracking-wide text-white/40">Hypothèses modèle</p>
-          <div className="flex flex-col gap-2">
-            {candidates.map((c, i) => (
-              <button
-                key={`${c.brand}-${c.model}-${i}`}
-                type="button"
-                onClick={() => pickCandidate(i)}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  selectedIdx === i
-                    ? "border-[var(--accent)] bg-[var(--accent)]/15"
-                    : "border-white/12 bg-white/[0.03] hover:border-white/25"
-                }`}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-display text-lg">
-                    {c.brand} {c.model}
-                  </span>
-                  <span className="text-[11px] text-white/40">{Math.round((c.score || 0) * 100)}%</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+      {error && <p className="mt-6 text-center text-sm text-red-500">{error}</p>}
+      {error === "Session expirée" && (
+        <p className="mt-2 text-center">
+          <Link href="/" className="text-sm font-medium underline">
+            Recommencer
+          </Link>
+        </p>
       )}
 
-      <label className="mt-6 block text-xs uppercase tracking-wide text-white/40">Description</label>
-      <textarea
-        value={edit}
-        onChange={(e) => setEdit(e.target.value)}
-        rows={5}
-        className="mt-2 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
-      />
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <input
-          type="email"
-          placeholder="Email (optionnel)"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
-        />
-        <input
-          type="text"
-          placeholder="@telegram (optionnel)"
-          value={telegram}
-          onChange={(e) => setTelegram(e.target.value)}
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm outline-none focus:border-[var(--accent)]"
-        />
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.04] bg-white/80 px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
+        <div className="mx-auto max-w-lg">
+          <button
+            type="button"
+            disabled={busy || !edit.trim()}
+            onClick={confirm}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-semibold text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+          >
+            {busy ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <>
+                <Check className="size-4" strokeWidth={2.5} />
+                Continuer
+              </>
+            )}
+          </button>
+        </div>
       </div>
-
-      {error && <p className="mt-4 text-sm text-rose-300">{error}</p>}
-
-      <button
-        type="button"
-        disabled={busy || !edit.trim()}
-        onClick={confirm}
-        className="mt-8 w-full rounded-full bg-[var(--accent)] py-3.5 text-sm font-semibold text-[#0a0908] disabled:opacity-50"
-      >
-        {busy ? "Envoi aux vendeurs…" : "Oui, je cherche ça — recevoir des devis"}
-      </button>
     </main>
   );
 }

@@ -34,6 +34,8 @@ export type Rfq = {
   photo_url: string;
   ai_description: Record<string, unknown>;
   user_edit?: string | null;
+  client_budget?: number | null;
+  client_budget_currency?: string | null;
   contact_email?: string | null;
   contact_telegram?: string | null;
   status: string;

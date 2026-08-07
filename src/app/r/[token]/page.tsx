@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { luxmatchApi } from "@/lib/api";
+import { Check, Loader2 } from "lucide-react";
+import { BrandMark } from "@/components/ui/brand-mark";
+import { luxefinderApi } from "@/lib/api";
 
 type Quote = {
   id: number;
@@ -25,7 +27,7 @@ export default function ClientRfqPage() {
 
   const load = useCallback(async () => {
     try {
-      const v = await luxmatchApi.client(token);
+      const v = await luxefinderApi.client(token);
       setData(v);
       setError(null);
     } catch (e) {
@@ -42,7 +44,7 @@ export default function ClientRfqPage() {
   async function select(quoteId: number) {
     setBusy(true);
     try {
-      await luxmatchApi.select(token, quoteId);
+      await luxefinderApi.select(token, quoteId);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -54,7 +56,7 @@ export default function ClientRfqPage() {
   async function review() {
     setBusy(true);
     try {
-      await luxmatchApi.review(token, rating, comment);
+      await luxefinderApi.review(token, rating, comment);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
@@ -64,80 +66,123 @@ export default function ClientRfqPage() {
   }
 
   if (!data && !error) {
-    return <main className="flex min-h-screen items-center justify-center text-sm text-white/50">Chargement…</main>;
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-foreground/30" />
+      </main>
+    );
   }
 
   const quotes = (data?.quotes as Quote[]) || [];
   const status = String(data?.status || "");
-  const photo = luxmatchApi.photoUrl(String(data?.photo_url || ""));
+  const photo = luxefinderApi.photoUrl(String(data?.photo_url || ""));
   const sent = Number(data?.sent_count || 0);
-  const product = String(data?.user_edit || (data?.ai_description as { summary?: string })?.summary || "");
+  const product = String(
+    data?.user_edit || (data?.ai_description as { summary?: string })?.summary || ""
+  );
+  const clientBudget = data?.client_budget != null ? Number(data.client_budget) : null;
+  const clientBudgetCurrency = String(data?.client_budget_currency || "EUR");
+  const waiting = quotes.length === 0;
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl px-5 py-12">
-      <p className="text-[11px] uppercase tracking-[0.3em] text-[var(--accent)]">LuxMatch · Vos devis</p>
-      <h1 className="font-display mt-3 text-3xl font-semibold">Demandes en cours</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        Statut : <span className="text-white/80">{status}</span> · Messages envoyés : {sent}/10 · Devis :{" "}
-        {quotes.length}
-      </p>
+    <main className="mx-auto min-h-[100dvh] max-w-lg px-5 pb-16 pt-6">
+      <header className="mb-8 flex items-center justify-between">
+        <BrandMark />
+        <span className="text-[12px] tabular-nums text-muted-foreground">
+          {quotes.length} · {sent}/10
+        </span>
+      </header>
 
       {photo && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt="" className="mt-6 max-h-40 rounded-xl object-contain bg-black/30" />
+        <img
+          src={photo}
+          alt=""
+          className="mx-auto mb-6 h-36 w-36 rounded-[1.5rem] object-cover shadow-soft ring-1 ring-black/[0.04]"
+        />
       )}
-      {product && <p className="mt-4 text-sm text-white/70">{product}</p>}
+
+      {product && (
+        <h1 className="text-balance text-center text-[22px] font-semibold tracking-[-0.03em]">
+          {product}
+        </h1>
+      )}
+
+      {clientBudget != null && clientBudget > 0 && (
+        <p className="mt-3 text-center text-[14px] text-muted-foreground">
+          Budget :{" "}
+          <span className="font-semibold text-foreground">
+            {clientBudget} {clientBudgetCurrency}
+          </span>
+        </p>
+      )}
+
       {data?.blast_error ? (
-        <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
-          WhatsApp : {String(data.blast_error)}
+        <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-center text-[13px] text-amber-800">
+          {String(data.blast_error)}
         </p>
       ) : null}
 
-      <section className="mt-10 space-y-3">
-        <h2 className="font-display text-xl">Devis reçus</h2>
-        {quotes.length === 0 ? (
-          <p className="text-sm text-white/45">En attente des vendeurs… cette page se met à jour seule.</p>
+      <section className="mt-10">
+        {waiting ? (
+          <div className="flex flex-col items-center gap-4 py-12">
+            <Loader2 className="size-7 animate-spin text-foreground/25" strokeWidth={1.5} />
+            <p className="text-[13px] text-muted-foreground">En attente…</p>
+          </div>
         ) : (
-          quotes.map((q) => (
-            <div key={q.id} className="rounded-2xl border border-white/12 bg-white/[0.03] p-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="font-display text-2xl">
-                  {q.price} {q.currency}
-                </p>
-                <span className="text-[11px] uppercase text-white/40">{q.status}</span>
-              </div>
-              {q.description && <p className="mt-2 text-sm text-white/65">{q.description}</p>}
-              {q.shipping && <p className="mt-1 text-xs text-white/45">Expédition : {q.shipping}</p>}
-              {q.payment_methods?.length ? (
-                <p className="mt-1 text-xs text-white/45">Paiement : {q.payment_methods.join(", ")}</p>
-              ) : null}
-              {status !== "selected" && status !== "completed" && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => select(q.id)}
-                  className="mt-4 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-[#0a0908]"
-                >
-                  Choisir ce devis
-                </button>
-              )}
-            </div>
-          ))
+          <ul className="space-y-3">
+            {quotes.map((q) => (
+              <li
+                key={q.id}
+                className="rounded-[1.5rem] bg-muted/80 p-5 ring-1 ring-black/[0.03] transition"
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="text-[28px] font-semibold tracking-[-0.03em]">
+                    {q.price}
+                    <span className="ml-1.5 text-[14px] font-medium text-muted-foreground">
+                      {q.currency}
+                    </span>
+                  </p>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {q.status}
+                  </span>
+                </div>
+                {q.description && (
+                  <p className="mt-2 text-[13px] text-foreground/70">{q.description}</p>
+                )}
+                {q.shipping && (
+                  <p className="mt-1 text-[12px] text-muted-foreground">{q.shipping}</p>
+                )}
+                {status !== "selected" && status !== "completed" && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => select(q.id)}
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3 text-[14px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-40"
+                  >
+                    <Check className="size-4" strokeWidth={2.5} />
+                    Choisir
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
       {(status === "selected" || status === "completed") && (
-        <section className="mt-10 rounded-2xl border border-white/12 p-5">
-          <h2 className="font-display text-xl">Laisser un avis</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Après votre commande — notez le vendeur.</p>
-          <div className="mt-4 flex gap-2">
+        <section className="mt-12">
+          <p className="mb-4 text-center text-[13px] text-muted-foreground">Avis</p>
+          <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => setRating(n)}
-                className={`h-10 w-10 rounded-full border text-sm ${
-                  rating >= n ? "border-[var(--accent)] bg-[var(--accent)]/20" : "border-white/15"
+                className={`flex size-11 items-center justify-center rounded-full text-[14px] font-medium transition ${
+                  rating >= n
+                    ? "bg-foreground text-white"
+                    : "bg-muted text-foreground/50"
                 }`}
               >
                 {n}
@@ -147,22 +192,22 @@ export default function ClientRfqPage() {
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            rows={3}
-            placeholder="Commentaire (optionnel)"
-            className="mt-4 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm"
+            rows={2}
+            placeholder="…"
+            className="mt-4 w-full resize-none rounded-[1.25rem] bg-muted/80 px-4 py-3 text-[14px] outline-none ring-1 ring-black/[0.03] focus:ring-black/10"
           />
           <button
             type="button"
             disabled={busy || status === "completed"}
             onClick={review}
-            className="mt-4 rounded-full border border-white/20 px-4 py-2 text-xs font-semibold disabled:opacity-50"
+            className="mt-3 w-full rounded-full border border-black/10 py-3 text-[14px] font-semibold disabled:opacity-40"
           >
-            {status === "completed" ? "Avis enregistré" : "Envoyer l’avis"}
+            {status === "completed" ? "Merci" : "Envoyer"}
           </button>
         </section>
       )}
 
-      {error && <p className="mt-6 text-sm text-rose-300">{error}</p>}
+      {error && <p className="mt-6 text-center text-sm text-red-500">{error}</p>}
     </main>
   );
 }

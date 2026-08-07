@@ -1,6 +1,25 @@
-# LuxMatch
+# LuxeFinder
 
-Marketplace photo → devis. **Live:** https://luxmatch-six.vercel.app
+Marketplace photo → devis. **Live:** https://luxefinder.app
+
+## Architecture SEO (même domaine)
+
+| URL | Rôle |
+|-----|------|
+| `/` | App minimaliste (conversion) |
+| `/guide`, `/guide/[slug]` | Contenu SEO / acquisition |
+| `/marques`, `/sacs/...` | Hubs marques & modèles |
+| `/robots.txt`, `/sitemap.xml`, `/llms.txt` | Indexation + GEO |
+
+Stratégie : [`docs/seo/2026-08_STRATEGIE_SEO_LUXEFINDER.md`](docs/seo/2026-08_STRATEGIE_SEO_LUXEFINDER.md)  
+Keyword map : [`docs/seo/KEYWORD_MAP_LUXEFINDER.md`](docs/seo/KEYWORD_MAP_LUXEFINDER.md)  
+GSC checklist : [`docs/seo/CHECKLIST_GSC_BING.md`](docs/seo/CHECKLIST_GSC_BING.md)  
+IndexNow (Bing) : [`docs/seo/INDEXNOW.md`](docs/seo/INDEXNOW.md)
+
+```bash
+npm run seo:export-urls   # listes GSC
+npm run indexnow          # pousse les URLs vers Bing IndexNow
+```
 
 ## Reconnaissance luxe (proche Lens)
 
@@ -25,7 +44,7 @@ Pipeline multi-signaux :
 | `PRODUCT_SEARCH_LOCATION` | ex. `us-west1` |
 | `PRODUCT_SEARCH_PRODUCT_SET` | ID du product set |
 | `BLOB_READ_WRITE_TOKEN` | Auto |
-| `LUXMATCH_PUBLIC_URL` | URL publique |
+| `LUXEFINDER_PUBLIC_URL` | URL publique (ex. `https://luxefinder.app`) |
 
 ### Métriques offline
 

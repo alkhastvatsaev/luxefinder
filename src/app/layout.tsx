@@ -1,28 +1,64 @@
-import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Outfit } from "next/font/google";
+import { WhatsAppFab } from "@/components/ui/whatsapp-fab";
 import "./globals.css";
 
-const display = Cormorant_Garamond({
+const sans = Outfit({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
-});
-
-const sans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-sans",
 });
 
+const SITE = "https://luxefinder.app";
+
 export const metadata: Metadata = {
-  title: "LuxMatch — Trouvez le bon vendeur",
-  description: "Déposez une photo. Recevez des devis de vendeurs. Choisissez.",
+  metadataBase: new URL(SITE),
+  title: {
+    default: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
+    template: "%s | LuxeFinder",
+  },
+  description:
+    "LuxeFinder (aussi écrit Luxe Finder) : envoyez une photo de sac ou accessoire de luxe, indiquez votre budget — on trouve des vendeurs et des offres. App gratuite sur luxefinder.app.",
+  applicationName: "LuxeFinder",
+  keywords: [
+    "LuxeFinder",
+    "Luxe Finder",
+    "luxefinder",
+    "trouver vendeur sac luxe",
+    "sac luxe occasion photo",
+  ],
+  alternates: { canonical: SITE },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: SITE,
+    siteName: "LuxeFinder",
+    title: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
+    description:
+      "LuxeFinder : photo + budget → on trouve les vendeurs. Sacs et mode luxe.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LuxeFinder — Luxe Finder",
+    description: "Photo. Budget. Offres vendeurs. luxefinder.app",
+  },
+  robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className={`${display.variable} ${sans.variable} antialiased`}>{children}</body>
+      <body className={`${sans.variable} font-sans antialiased`}>
+        {children}
+        <WhatsAppFab />
+      </body>
     </html>
   );
 }

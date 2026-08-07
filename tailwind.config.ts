@@ -10,33 +10,26 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ["var(--font-display)", "sans-serif"],
-        sans: ["var(--font-sans)", "sans-serif"],
-        mono: ["var(--font-mono)", "monospace"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-sans)", "system-ui", "sans-serif"],
       },
       colors: {
-        ink: "var(--ink)",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         muted: {
-          DEFAULT: "hsl(var(--muted-bg))",
+          DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "#0a0908",
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
-        surface: "var(--surface)",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
         border: "hsl(var(--border))",
         ring: "hsl(var(--ring))",
       },
       borderRadius: {
-        lg: "0.75rem",
-        md: "0.5rem",
-        sm: "0.375rem",
-      },
-      boxShadow: {
-        panel: "0 1px 0 rgba(12,20,25,0.04), 0 18px 40px -24px rgba(12,20,25,0.28)",
+        "3xl": "1.5rem",
+        "4xl": "2rem",
       },
       keyframes: {
         "fade-in": {
@@ -45,7 +38,7 @@ export default {
         },
       },
       animation: {
-        "fade-in": "fade-in 0.3s ease-out",
+        "fade-in": "fade-in 0.35s ease-out",
       },
     },
   },

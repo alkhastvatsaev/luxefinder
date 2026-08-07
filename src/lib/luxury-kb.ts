@@ -106,3 +106,66 @@ export function normalizeText(s: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+export type LuxurySuggestion = {
+  brand: string;
+  model: string;
+  label: string;
+  category?: string;
+  score: number;
+};
+
+/** Fuzzy typeahead over the luxury KB (safe for client + server). */
+export function suggestLuxuryModels(query: string, limit = 8): LuxurySuggestion[] {
+  const q = normalizeText(query);
+  if (q.length < 2) return [];
+
+  const tokens = q.split(" ").filter(Boolean);
+  const scored: LuxurySuggestion[] = [];
+
+  for (const item of LUXURY_MODELS) {
+    const brandN = normalizeText(item.brand);
+    const modelN = normalizeText(item.model);
+    const haystack = [brandN, modelN, ...item.aliases.map(normalizeText)].join(" ");
+    const label = `${item.brand} ${item.model}`;
+
+    let score = 0;
+    if (haystack.startsWith(q) || brandN.startsWith(q) || modelN.startsWith(q)) score += 120;
+    if (haystack.includes(q)) score += 80;
+    for (const t of tokens) {
+      if (brandN.includes(t)) score += 40;
+      if (modelN.includes(t)) score += 50;
+      if (item.aliases.some((a) => normalizeText(a).includes(t))) score += 35;
+      if (haystack.includes(t)) score += 10;
+    }
+    // Prefer exact alias prefix matches (Google-like)
+    for (const a of item.aliases) {
+      const an = normalizeText(a);
+      if (an.startsWith(q)) score += 60;
+      else if (an.includes(q)) score += 25;
+    }
+
+    if (score > 0) {
+      scored.push({
+        brand: item.brand,
+        model: item.model,
+        label,
+        category: item.category,
+        score,
+      });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
+  const seen = new Set<string>();
+  const out: LuxurySuggestion[] = [];
+  for (const s of scored) {
+    const key = s.label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+

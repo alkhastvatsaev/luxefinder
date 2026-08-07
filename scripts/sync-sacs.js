@@ -12,7 +12,7 @@ const candidates = [
 const srcDir = candidates.find((d) => fs.existsSync(d));
 const outDir = path.join(process.cwd(), "public/sacs");
 if (!srcDir) {
-  console.error("No sacs folder found next to luxmatch");
+  console.error("No sacs folder found next to luxefinder");
   process.exit(1);
 }
 fs.mkdirSync(outDir, { recursive: true });

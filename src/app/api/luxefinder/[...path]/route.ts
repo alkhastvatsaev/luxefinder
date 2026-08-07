@@ -4,10 +4,12 @@ import {
   clientView,
   handleAnalyze,
   handleConfirm,
+  handleSuggest,
+  handleTextSearch,
   selectQuote,
   submitQuote,
   supplierView,
-} from "@/lib/luxmatch-core";
+} from "@/lib/luxefinder-core";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +24,11 @@ function err(e: unknown, fallback = 500) {
 export async function GET(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
   try {
+    if (path.length === 1 && path[0] === "suggest") {
+      const q = req.nextUrl.searchParams.get("q") || "";
+      const out = await handleSuggest(q);
+      return NextResponse.json(out);
+    }
     if (path[0] === "r" && path[1] && path.length === 2) {
       const view = await clientView(path[1]);
       if (!view) return NextResponse.json({ detail: "not found" }, { status: 404 });
@@ -48,6 +55,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ path: stri
         return NextResponse.json({ detail: "file required" }, { status: 400 });
       }
       const out = await handleAnalyze(file);
+      return NextResponse.json(out);
+    }
+
+    if (path.length === 1 && path[0] === "search") {
+      const body = await req.json().catch(() => ({}));
+      const query = typeof body?.query === "string" ? body.query : "";
+      const out = await handleTextSearch(query);
       return NextResponse.json(out);
     }
 
