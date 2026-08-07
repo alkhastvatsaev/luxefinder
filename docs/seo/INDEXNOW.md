@@ -23,7 +23,7 @@ INDEXNOW_KEY=b7f8d09f395540809faa4e2ecc5a4e20
 ## Soumettre toutes les URLs SEO
 
 ```bash
-cd luxmatch
+cd luxefinder
 npm run indexnow
 ```
 

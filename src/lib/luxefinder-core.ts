@@ -427,7 +427,6 @@ export async function handleConfirm(body: {
 
   const base = (
     process.env.LUXEFINDER_PUBLIC_URL ||
-    process.env.LUXMATCH_PUBLIC_URL ||
     "https://luxefinder.app"
   ).replace(/\/$/, "");
   return {
@@ -447,7 +446,6 @@ export async function clientView(token: string) {
   if (!req) return null;
   const base = (
     process.env.LUXEFINDER_PUBLIC_URL ||
-    process.env.LUXMATCH_PUBLIC_URL ||
     "https://luxefinder.app"
   ).replace(/\/$/, "");
   return {

@@ -3,9 +3,7 @@
 | | |
 |---|---|
 | **Domaine** | https://luxefinder.app |
-| **Projet Vercel** | `luxmatch` (Production URL = luxefinder.app) |
-| **GitHub** | https://github.com/alkhastvatsaev/luxmatch |
-| **Chemin local** | `etude/luxmatch` |
+| **Projet Vercel** | `luxefinder` (Production URL = luxefinder.app) |
+| **GitHub** | https://github.com/alkhastvatsaev/luxefinder |
+| **Chemin local** | `etude/luxefinder` |
 | **package name** | `luxefinder` |
-
-Confirmé via `vercel projects ls` le 2026-08-06.

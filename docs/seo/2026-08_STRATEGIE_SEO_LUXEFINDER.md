@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Domaine** | https://luxefinder.app |
-| **Repo / Vercel** | `luxmatch` → Production URL = luxefinder.app |
+| **Repo / Vercel** | `luxefinder` → Production URL = luxefinder.app |
 | **Date** | 2026-08-06 |
 | **Principe** | Home = app minimaliste ; `/guide`, `/marques`, `/sacs` = acquisition SEO sur le **même** domaine |
 | **Hors scope** | Site marketing séparé + redirect ; Instagram / TikTok (phase ultérieure) |
@@ -41,7 +41,7 @@ Google / Bing / ChatGPT
 | Contenu textuel home | ~2 phrases | App inchangée ; richesse sur routes SEO |
 | `/guide` etc. | 404 | 200 + contenu |
 
-Repo confirmé : projet Vercel **`luxmatch`**, code local [`etude/luxmatch`](../../) (`package.json` name: `luxefinder`).
+Repo confirmé : projet Vercel **`luxefinder`**, code local [`etude/luxefinder`](../../) (`package.json` name: `luxefinder`).
 
 ---
 
