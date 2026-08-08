@@ -165,6 +165,13 @@ export default function HomeCoverflow({ bagSlides }: Props) {
     return [...trackBags.slice(shift), ...trackBags.slice(0, shift)].reverse();
   }, [trackBags]);
 
+  /** Top row — same direction as bottom, different phase from mid. */
+  const topTrackBags = useMemo(() => {
+    if (!trackBags.length) return trackBags;
+    const shift = Math.max(1, Math.floor(trackBags.length / 3));
+    return [...trackBags.slice(shift), ...trackBags.slice(0, shift)];
+  }, [trackBags]);
+
   const goBack = useCallback(() => {
     if (busy) return;
     setResult(null);
@@ -355,6 +362,44 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           )}
         </div>
       </div>
+
+      {/* Top bag track — behind Lens, same direction as bottom */}
+      {showBagMarquee && topTrackBags.length > 0 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-[22%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.45] sm:h-32 md:top-[24%] md:h-36"
+        >
+          <MarqueeAlongSvgPath
+            path={BAG_PATH}
+            viewBox="0 0 1600 100"
+            baseVelocity={5.5}
+            direction="normal"
+            draggable={false}
+            repeat={1}
+            fadeEnds={8}
+            keepUpright
+            className="h-full w-full"
+            enableRollingZIndex
+            zIndexBase={1}
+            zIndexRange={6}
+          >
+            {topTrackBags.map((bag, i) => (
+              <div
+                key={`top-${bag.src}-${i}`}
+                className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bag.src}
+                  alt=""
+                  className="pointer-events-none h-full w-full object-cover"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </MarqueeAlongSvgPath>
+        </div>
+      )}
 
       {/* Mid bag track — behind Lens, opposite direction */}
       {showBagMarquee && midTrackBags.length > 0 && (
