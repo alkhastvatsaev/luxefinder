@@ -185,7 +185,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           {showBagMarquee && bagSlides.length > 0 && (
             <div
               aria-hidden
-              className="absolute inset-x-0 top-1/2 z-0 h-[min(58vh,440px)] w-full -translate-y-1/2 overflow-visible"
+              className="absolute inset-x-0 top-1/2 z-0 h-[min(54vh,400px)] w-full -translate-y-1/2 overflow-visible"
             >
               <MarqueeAlongSvgPath
                 path={BAG_PATH}
@@ -198,9 +198,9 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                 dragSensitivity={0.12}
                 dragVelocityDecay={0.94}
                 dragAwareDirection
-                repeat={2}
-                fadeEnds={16}
-                className="h-full w-full scale-[1.15]"
+                repeat={1}
+                fadeEnds={14}
+                className="h-full w-full scale-[1.08]"
                 responsive
                 enableRollingZIndex
                 zIndexBase={1}
@@ -209,7 +209,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                 {bagSlides.map((bag, i) => (
                   <div
                     key={`${bag.src}-${i}`}
-                    className="h-32 w-32 select-none overflow-hidden rounded-[1.35rem] shadow-soft ring-1 ring-black/[0.04] sm:h-36 sm:w-36 md:h-44 md:w-44 md:rounded-[1.5rem]"
+                    className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
