@@ -1,6 +1,6 @@
 ---
 description: Keep the home Lens CTA frosted/transparent unless the user explicitly asks otherwise
-globs: src/components/home-coverflow.tsx,src/app/globals.css
+globs: src/components/home-coverflow.tsx,src/app/globals.css,src/lib/lens-glass.ts,scripts/audit-lens-frost.js
 alwaysApply: true
 ---
 
@@ -8,16 +8,23 @@ alwaysApply: true
 
 The centered home upload button (Lens) must stay **semi-transparent frosted glass** in the idle state.
 
+## Source of truth
+- CSS: `.lens-glass` / `.lens-glass-dragging` in `src/app/globals.css`
+- Class wiring: `lensFaceClassName()` in `src/lib/lens-glass.ts`
+- Home usage: `src/components/home-coverflow.tsx` must call `lensFaceClassName(...)`
+- Build gate: `npm run audit:lens-frost` (runs on every `npm run build` / Vercel)
+
 ## Required look
-- Idle: use the CSS classes `lens-glass` / `lens-glass-dragging` from `src/app/globals.css`
+- Idle: frosted glass via `lens-glass` (alpha ≤ 0.45)
 - Photo state only: opaque white + `overflow-hidden` is OK
 - Soft blue frame halo via `animate-budget-halo` stays
 
 ## Never do without an explicit user request
 - Restore solid fills like `bg-white`, `from-neutral-50 to-white`, or heavy `bg-white/80+` underlays on the idle Lens
-- Put `opacity` / fade entrance animations on any **ancestor** of the Lens frost (breaks `backdrop-filter` until the anim ends)
-- Combine `overflow-hidden` with `backdrop-filter` on the idle Lens face (Safari bug)
+- Put `opacity` / fade entrance animations (`animate-rise`, `animate-rise-delay`) on any **ancestor** of the Lens frost
+- Combine `overflow-hidden` with frost on the idle Lens face (Safari bug)
 - Revert to an old “solid Lens checkpoint” when shipping unrelated marquee/asset updates
+- Bypass or delete `audit:lens-frost`
 
 ## When editing marquees / jewelry / sunglasses / bags
-Touch only the track props and slide lists. Leave the Lens shell classes alone unless the task is specifically about the Lens.
+Touch only the track props and slide lists. Do not edit `lens-glass.ts`, Lens face classNames, or frost CSS unless the task is specifically about the Lens.

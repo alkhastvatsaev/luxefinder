@@ -11,6 +11,7 @@ import { ProductSearchBar } from "@/components/ui/product-search-bar";
 import MarqueeAlongSvgPath from "@/components/ui/marquee-along-svg-path";
 import { SearchResultsIdentity, SearchResultsActions } from "@/components/search-results";
 import { luxefinderApi, type AiDescription } from "@/lib/api";
+import { lensFaceClassName } from "@/lib/lens-glass";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -249,13 +250,7 @@ export default function HomeCoverflow({
                   setDragging(false);
                   onFile(e.dataTransfer.files?.[0] || null);
                 }}
-                className={cn(
-                  "group relative z-10 flex h-full w-full flex-col items-center justify-center rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
-                  showPhoto
-                    ? "overflow-hidden bg-white"
-                    : cn("lens-glass", dragging && "lens-glass-dragging"),
-                  busy && "pointer-events-none"
-                )}
+                className={lensFaceClassName({ showPhoto, dragging, busy })}
               >
                 {showPhoto ? (
                   <>
