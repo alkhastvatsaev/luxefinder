@@ -231,15 +231,24 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                   onFile(e.dataTransfer.files?.[0] || null);
                 }}
                 className={cn(
-                  "group relative z-10 flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
-                  showPhoto
-                    ? "bg-white"
-                    : dragging
-                      ? "bg-white/40 backdrop-blur-md"
-                      : "bg-white/45 backdrop-blur-md",
+                  "group relative z-10 flex h-full w-full flex-col items-center justify-center rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
+                  showPhoto ? "overflow-hidden bg-white" : "bg-transparent",
                   busy && "pointer-events-none"
                 )}
               >
+                {/* Frost plate separate from overflow — Safari breaks backdrop-filter + overflow-hidden */}
+                {!showPhoto && (
+                  <>
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/80"
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/50 backdrop-blur-xl [transform:translateZ(0)] [-webkit-backdrop-filter:blur(24px)]"
+                    />
+                  </>
+                )}
                 {showPhoto ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
