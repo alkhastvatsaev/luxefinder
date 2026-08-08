@@ -24,9 +24,8 @@ type Result = {
   ai_description: AiDescription;
 };
 
-/** Soft horizontal wave behind the centered Lens CTA. */
-const BAG_PATH =
-  "M1 209.434C58.5872 255.935 387.926 325.938 482.583 209.434C600.905 63.8051 525.516 -43.2211 427.332 19.9613C329.149 83.1436 352.902 242.723 515.041 267.302C644.752 286.966 943.56 181.94 995 156.5";
+/** Straight horizontal track along the bottom of the screen. */
+const BAG_PATH = "M0 50 L996 50";
 
 export default function HomeCoverflow({ bagSlides }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -181,50 +180,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         )}
 
         <div className="animate-rise-delay relative flex w-screen max-w-[100vw] shrink items-center justify-center">
-          {/* Bag marquee — background layer, behind Lens */}
-          {showBagMarquee && bagSlides.length > 0 && (
-            <div
-              aria-hidden
-              className="absolute inset-x-0 top-1/2 z-0 h-[min(54vh,400px)] w-full -translate-y-1/2 overflow-visible"
-            >
-              <MarqueeAlongSvgPath
-                path={BAG_PATH}
-                viewBox="0 0 996 330"
-                baseVelocity={6}
-                slowdownOnHover
-                slowDownFactor={0.25}
-                draggable
-                grabCursor
-                dragSensitivity={0.12}
-                dragVelocityDecay={0.94}
-                dragAwareDirection
-                repeat={1}
-                fadeEnds={14}
-                className="h-full w-full scale-[1.08]"
-                responsive
-                enableRollingZIndex
-                zIndexBase={1}
-                zIndexRange={8}
-              >
-                {bagSlides.map((bag, i) => (
-                  <div
-                    key={`${bag.src}-${i}`}
-                    className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={bag.src}
-                      alt=""
-                      className="pointer-events-none h-full w-full object-cover"
-                      draggable={false}
-                    />
-                  </div>
-                ))}
-              </MarqueeAlongSvgPath>
-            </div>
-          )}
-
-          {/* Lens CTA — foreground, always centered (above marquee drag layer) */}
+          {/* Lens CTA — centered */}
           <div
             className="relative z-20"
             style={{ width: lensSize, height: lensSize }}
@@ -382,6 +338,50 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           )}
         </div>
       </div>
+
+      {/* Straight bag track — bottom of screen */}
+      {showBagMarquee && bagSlides.length > 0 && (
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-0 h-[7.5rem] w-full overflow-visible sm:h-36 md:h-40"
+        >
+          <MarqueeAlongSvgPath
+            path={BAG_PATH}
+            viewBox="0 0 996 100"
+            baseVelocity={6}
+            slowdownOnHover
+            slowDownFactor={0.25}
+            draggable
+            grabCursor
+            dragSensitivity={0.12}
+            dragVelocityDecay={0.94}
+            dragAwareDirection
+            repeat={1}
+            fadeEnds={14}
+            keepUpright
+            className="h-full w-full"
+            responsive
+            enableRollingZIndex
+            zIndexBase={1}
+            zIndexRange={8}
+          >
+            {bagSlides.map((bag, i) => (
+              <div
+                key={`${bag.src}-${i}`}
+                className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bag.src}
+                  alt=""
+                  className="pointer-events-none h-full w-full object-cover"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </MarqueeAlongSvgPath>
+        </div>
+      )}
     </main>
   );
 }

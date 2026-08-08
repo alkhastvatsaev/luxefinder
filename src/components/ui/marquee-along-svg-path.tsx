@@ -87,6 +87,9 @@ interface MarqueeAlongSvgPathProps {
    */
   fadeEnds?: number;
 
+  /** Keep items upright (offset-rotate: 0) instead of following path tangent. */
+  keepUpright?: boolean;
+
   responsive?: boolean;
 }
 
@@ -109,6 +112,7 @@ function MarqueeItem({
   enableRollingZIndex,
   calculateZIndex,
   fadeEnds,
+  keepUpright,
   isHovered,
 }: {
   item: MarqueeItemMeta;
@@ -121,6 +125,7 @@ function MarqueeItem({
   enableRollingZIndex: boolean;
   calculateZIndex: (offsetDistance: number) => number | undefined;
   fadeEnds: number;
+  keepUpright: boolean;
   isHovered: React.MutableRefObject<boolean>;
 }) {
   const { child, repeatIndex, itemIndex } = item;
@@ -173,6 +178,7 @@ function MarqueeItem({
       style={{
         offsetPath: `path('${path}')`,
         offsetDistance: itemOffset,
+        offsetRotate: keepUpright ? "0deg" : "auto",
         opacity,
         scale,
         zIndex: enableRollingZIndex ? zIndex : undefined,
@@ -223,6 +229,7 @@ const MarqueeAlongSvgPath = ({
   zIndexBase = 1,
   zIndexRange = 10,
   fadeEnds = 0,
+  keepUpright = false,
   responsive = false,
 }: MarqueeAlongSvgPathProps) => {
   const container = useRef<HTMLDivElement>(null);
@@ -464,6 +471,7 @@ const MarqueeAlongSvgPath = ({
             enableRollingZIndex={enableRollingZIndex}
             calculateZIndex={calculateZIndex}
             fadeEnds={fadeEnds}
+            keepUpright={keepUpright}
             isHovered={isHovered}
           />
         ))}
