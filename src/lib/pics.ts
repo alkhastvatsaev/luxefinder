@@ -40,7 +40,7 @@ export function listPicsSlides(): Slide[] {
 export function listSunglassesSlides(): Slide[] {
   const files = listImagesIn(path.join(process.cwd(), "public", "sunglasses"));
   return files.map((f, i) => ({
-    src: `/sunglasses/${f}?v=2`,
+    src: `/sunglasses/${f}?v=3`,
     alt: `Lunettes de soleil ${i + 1}`,
     title: "",
   }));
