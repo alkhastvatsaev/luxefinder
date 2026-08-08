@@ -209,13 +209,13 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
           </div>
         )}
 
-        <div className="animate-rise-delay relative flex w-screen max-w-[100vw] shrink items-center justify-center">
-          {/* Lens CTA — always above bag tracks */}
+        <div className="relative flex w-screen max-w-[100vw] shrink items-center justify-center">
+          {/* Lens CTA — always above bag tracks; no opacity/transform anim on this shell (breaks backdrop-filter) */}
           <div
             className="relative z-30 pointer-events-auto"
             style={{ width: lensSize, height: lensSize }}
           >
-            <div className="relative h-full w-full">
+            <div className="relative h-full w-full [transform:translateZ(0)]">
               {showLensHalo && (
                 <span
                   aria-hidden
@@ -254,7 +254,7 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
                     />
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/20 backdrop-blur-xl [transform:translateZ(0)] [-webkit-backdrop-filter:blur(20px)]"
+                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/20 backdrop-blur-xl will-change-[backdrop-filter] [transform:translateZ(0)] [-webkit-backdrop-filter:blur(20px)]"
                     />
                   </>
                 )}
