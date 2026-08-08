@@ -333,7 +333,7 @@ export default function HomeCoverflow({
                     <span
                       aria-hidden={!lensHintVisible}
                       className={cn(
-                        "pointer-events-none absolute left-1/2 top-[calc(50%+2.15rem)] w-[min(100%-1.75rem,12rem)] -translate-x-1/2 text-center text-[14px] font-medium leading-snug tracking-[-0.02em] text-foreground transition-opacity duration-1000 ease-out sm:text-[15px] md:top-[calc(50%+2.55rem)]",
+                        "pointer-events-none absolute left-1/2 top-[calc(50%+2.15rem)] w-[min(100%-1.75rem,12rem)] -translate-x-1/2 text-center text-[13px] font-medium leading-snug tracking-[-0.02em] text-foreground transition-opacity duration-1000 ease-out sm:text-[14px] md:top-[calc(50%+2.55rem)]",
                         lensHintVisible ? "opacity-100" : "opacity-0"
                       )}
                     >
