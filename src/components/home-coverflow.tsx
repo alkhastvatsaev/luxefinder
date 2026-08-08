@@ -337,7 +337,7 @@ export default function HomeCoverflow({
                         lensHintVisible ? "opacity-100" : "opacity-0"
                       )}
                     >
-                      Envoyez la photo de ce que vous voulez.
+                      Envoyez la photo de ce que vous cherchez.
                     </span>
                     <input
                       ref={fileInputRef}
