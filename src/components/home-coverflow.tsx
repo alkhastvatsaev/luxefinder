@@ -367,20 +367,23 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       {showBagMarquee && trackBags.length > 0 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[7.25rem] z-0 flex flex-col justify-evenly sm:top-[7.75rem]">
           {/* Top — same direction as bottom */}
-          <div
-            aria-hidden
-            className="relative h-32 w-full shrink-0 overflow-visible sm:h-36 md:h-40"
-          >
+          <div className="relative z-10 h-32 w-full shrink-0 overflow-visible pointer-events-auto sm:h-36 md:h-40">
             <MarqueeAlongSvgPath
               path={BAG_PATH}
               viewBox="0 0 1600 100"
               baseVelocity={5.5}
               direction="normal"
-              draggable={false}
+              slowdownOnHover
+              slowDownFactor={0.25}
+              draggable
+              grabCursor
+              dragSensitivity={0.18}
+              dragVelocityDecay={0.94}
+              dragAwareDirection
               repeat={1}
               fadeEnds={8}
               keepUpright
-              className="h-full w-full"
+              className="h-full w-full cursor-grab"
               enableRollingZIndex
               zIndexBase={1}
               zIndexRange={6}
@@ -402,21 +405,24 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             </MarqueeAlongSvgPath>
           </div>
 
-          {/* Mid — reverse, behind Lens */}
-          <div
-            aria-hidden
-            className="relative h-32 w-full shrink-0 overflow-visible sm:h-36 md:h-40"
-          >
+          {/* Mid — reverse, behind Lens (grabable around the CTA) */}
+          <div className="relative z-10 h-32 w-full shrink-0 overflow-visible pointer-events-auto sm:h-36 md:h-40">
             <MarqueeAlongSvgPath
               path={BAG_PATH}
               viewBox="0 0 1600 100"
               baseVelocity={5}
               direction="reverse"
-              draggable={false}
+              slowdownOnHover
+              slowDownFactor={0.25}
+              draggable
+              grabCursor
+              dragSensitivity={0.18}
+              dragVelocityDecay={0.94}
+              dragAwareDirection
               repeat={1}
               fadeEnds={8}
               keepUpright
-              className="h-full w-full"
+              className="h-full w-full cursor-grab"
               enableRollingZIndex
               zIndexBase={1}
               zIndexRange={6}
