@@ -185,7 +185,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           {showBagMarquee && bagSlides.length > 0 && (
             <div
               aria-hidden
-              className="absolute inset-x-0 top-1/2 z-0 h-[min(52vh,360px)] w-full -translate-y-1/2 overflow-visible"
+              className="absolute inset-x-0 top-1/2 z-0 h-[min(58vh,440px)] w-full -translate-y-1/2 overflow-visible"
             >
               <MarqueeAlongSvgPath
                 path={BAG_PATH}
@@ -200,7 +200,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                 dragAwareDirection
                 repeat={2}
                 fadeEnds={16}
-                className="h-full w-full scale-110"
+                className="h-full w-full scale-[1.15]"
                 responsive
                 enableRollingZIndex
                 zIndexBase={1}
@@ -209,7 +209,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                 {bagSlides.map((bag, i) => (
                   <div
                     key={`${bag.src}-${i}`}
-                    className="h-20 w-20 select-none overflow-hidden rounded-2xl shadow-soft ring-1 ring-black/[0.04] md:h-24 md:w-24"
+                    className="h-32 w-32 select-none overflow-hidden rounded-[1.35rem] shadow-soft ring-1 ring-black/[0.04] sm:h-36 sm:w-36 md:h-44 md:w-44 md:rounded-[1.5rem]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
