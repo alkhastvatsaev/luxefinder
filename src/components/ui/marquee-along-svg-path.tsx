@@ -150,13 +150,6 @@ function MarqueeItem({
       : [0, 100],
     fadeZone > 0 ? [0, 1, 1, 0] : [1, 1]
   );
-  const scale = useTransform(
-    currentOffsetDistance,
-    fadeZone > 0
-      ? [0, fadeZone, 100 - fadeZone, 100]
-      : [0, 100],
-    fadeZone > 0 ? [0.88, 1, 1, 0.88] : [1, 1]
-  );
 
   useEffect(() => {
     const sync = (value: string) => {
@@ -180,10 +173,10 @@ function MarqueeItem({
         offsetDistance: itemOffset,
         offsetRotate: keepUpright ? "0deg" : "auto",
         opacity,
-        scale,
         zIndex: enableRollingZIndex ? zIndex : undefined,
-        willChange: "offset-distance, opacity, transform",
+        willChange: "offset-distance, opacity",
         backfaceVisibility: "hidden",
+        transform: "translateZ(0)",
         pointerEvents: draggable ? "auto" : "none",
       }}
       aria-hidden={repeatIndex > 0}

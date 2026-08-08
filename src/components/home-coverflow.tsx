@@ -369,7 +369,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           {/* Top — same direction as bottom */}
           <div
             aria-hidden
-            className="relative h-28 w-full shrink-0 overflow-visible opacity-50 sm:h-32 md:h-36"
+            className="relative h-32 w-full shrink-0 overflow-visible sm:h-36 md:h-40"
           >
             <MarqueeAlongSvgPath
               path={BAG_PATH}
@@ -388,7 +388,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
               {topTrackBags.map((bag, i) => (
                 <div
                   key={`top-${bag.src}-${i}`}
-                  className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -405,7 +405,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           {/* Mid — reverse, behind Lens */}
           <div
             aria-hidden
-            className="relative h-28 w-full shrink-0 overflow-visible opacity-55 sm:h-32 md:h-36"
+            className="relative h-32 w-full shrink-0 overflow-visible sm:h-36 md:h-40"
           >
             <MarqueeAlongSvgPath
               path={BAG_PATH}
@@ -424,7 +424,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
               {midTrackBags.map((bag, i) => (
                 <div
                   key={`mid-${bag.src}-${i}`}
-                  className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
