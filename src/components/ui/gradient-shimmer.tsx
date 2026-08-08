@@ -57,6 +57,11 @@ export interface GradientShimmerProps extends Omit<
   angle?: number;
   /** Idle gap (ms) after each sweep before the next one. Defaults to `1000`. */
   pauseBetween?: number;
+  /**
+   * If set, idle gap is random in `[pauseBetween, pauseBetweenMax]` ms each cycle.
+   * Omit for a fixed `pauseBetween`.
+   */
+  pauseBetweenMax?: number;
   /** Base text color the band fades into. Defaults to `"currentColor"`. */
   baseColor?: string;
   /** Pause the sweep while the page is scrolling. Defaults to `true`. */
@@ -327,6 +332,7 @@ export function GradientShimmer({
   spread = DEFAULT_SPREAD,
   angle = DEFAULT_ANGLE,
   pauseBetween = 1000,
+  pauseBetweenMax,
   baseColor = "currentColor",
   pauseOnScroll = true,
   pauseWhenOffscreen = true,
@@ -343,6 +349,17 @@ export function GradientShimmer({
   );
   const safeSpread = Math.max(0, finiteOr(spread, DEFAULT_SPREAD));
   const safeAngle = finiteOr(angle, DEFAULT_ANGLE);
+  const safePauseMin = Math.max(0, finiteOr(pauseBetween, 1000));
+  const safePauseMax = Math.max(
+    safePauseMin,
+    finiteOr(pauseBetweenMax ?? pauseBetween, safePauseMin),
+  );
+  const nextPauseMs = () => {
+    if (safePauseMax <= safePauseMin) return safePauseMin;
+    return (
+      safePauseMin + Math.random() * (safePauseMax - safePauseMin)
+    );
+  };
   const stops = useMemo(() => resolveStops(gradient), [gradient]);
   const backgroundImage = useMemo(
     () => buildBandGradient(stops, safeAngle),
@@ -418,7 +435,7 @@ export function GradientShimmer({
       anim?.cancel();
       anim = next;
       next.onfinish = () => {
-        pauseTimer = setTimeout(runSweep, Math.max(0, pauseBetween));
+        pauseTimer = setTimeout(runSweep, nextPauseMs());
       };
     };
 
@@ -447,7 +464,8 @@ export function GradientShimmer({
     safeSpread,
     safeDuration,
     easingValue,
-    pauseBetween,
+    safePauseMin,
+    safePauseMax,
     pauseOnScroll,
     pauseWhenOffscreen,
     respectReducedMotion,

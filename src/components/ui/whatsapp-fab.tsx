@@ -37,7 +37,7 @@ export function WhatsAppFab() {
       onPointerLeave={() => setPressed(false)}
       className={cn(
         "fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-50 flex size-12 items-center justify-center rounded-full shadow-soft transition-colors duration-200",
-        "bg-foreground text-white",
+        "bg-neutral-200 text-neutral-500",
         "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-[#25D366] [@media(hover:hover)_and_(pointer:fine)]:hover:text-white",
         pressed && "bg-[#25D366] text-white"
       )}

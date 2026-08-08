@@ -344,21 +344,23 @@ export default function HomeCoverflow({
           {!hasResult && !showPhoto && !busy && (
             <p className="animate-rise-delay flex max-w-[340px] flex-col items-center gap-0.5 text-center text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:max-w-[400px] sm:text-[26px] md:text-[28px]">
               <GradientShimmer
-                gradient="sunrise"
+                gradient="bay"
                 easing="smooth"
-                duration={1.45}
+                duration={5.8}
                 spread={3}
-                pauseBetween={1200}
+                pauseBetween={5000}
+                pauseBetweenMax={9000}
                 className="text-inherit font-semibold tracking-inherit"
               >
                 Vous savez ce que vous voulez.
               </GradientShimmer>
               <GradientShimmer
-                gradient="sunrise"
+                gradient="bay"
                 easing="smooth"
-                duration={1.45}
+                duration={5.8}
                 spread={3}
-                pauseBetween={1200}
+                pauseBetween={5000}
+                pauseBetweenMax={9000}
                 className="text-inherit font-semibold tracking-inherit"
               >
                 On vous trouve les vendeurs.

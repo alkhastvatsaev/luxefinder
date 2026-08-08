@@ -3,6 +3,7 @@
 import { ArrowUpRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { GradientShimmer } from "@/components/ui/gradient-shimmer";
 import { AiDescription, luxefinderApi, type MatchLink } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -42,9 +43,20 @@ export function SearchResultsIdentity({ ai, className }: IdentityProps) {
 
   return (
     <div className={`mx-auto flex w-full max-w-sm flex-col items-center px-5 text-center ${className || ""}`}>
-      <p className="line-clamp-2 text-balance text-[17px] font-semibold leading-snug tracking-[-0.03em] text-foreground sm:text-[19px]">
-        {title}
-      </p>
+      {title ? (
+        <GradientShimmer
+          gradient="bay"
+          easing="smooth"
+          duration={5.8}
+          spread={3}
+          pauseBetween={5000}
+          pauseBetweenMax={9000}
+          as="p"
+          className="line-clamp-2 text-balance text-[17px] font-semibold leading-snug tracking-[-0.03em] text-foreground sm:text-[19px]"
+        >
+          {title}
+        </GradientShimmer>
+      ) : null}
 
       {topLink && (
         <a
