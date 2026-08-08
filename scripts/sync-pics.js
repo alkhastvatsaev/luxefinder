@@ -204,13 +204,13 @@ async function cutout(abs) {
 }
 
 async function toCarouselJpeg(abs) {
-  const { png, method } = await cutout(abs);
-  const buf = await sharp(png)
-    .resize(800, 800, { fit: "contain", background: WHITE })
-    .flatten({ background: WHITE })
+  // Keep original photo (no subject cutout) — square crop for marquee tiles
+  const buf = await sharp(abs)
+    .rotate()
+    .resize(800, 800, { fit: "cover", position: "centre" })
     .jpeg({ quality: 88 })
     .toBuffer();
-  return { buf, method };
+  return { buf, method: "original" };
 }
 
 function hasCommittedPics() {
