@@ -203,9 +203,9 @@ async function cutout(abs) {
 
 async function toCarouselJpeg(abs) {
   const { png, method } = await cutout(abs);
-  // Landscape-friendly canvas — sunglasses read better than a tight square crop
+  // Match bag tiles — square contain so frames stay consistent across rows
   const buf = await sharp(png)
-    .resize(900, 560, { fit: "contain", background: WHITE })
+    .resize(800, 800, { fit: "contain", background: WHITE })
     .flatten({ background: WHITE })
     .jpeg({ quality: 88 })
     .toBuffer();

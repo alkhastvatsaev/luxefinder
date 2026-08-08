@@ -178,8 +178,6 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
     return [...trackBags.slice(shift), ...trackBags.slice(0, shift)].reverse();
   }, [trackBags]);
 
-  const topUsesSunglasses = sunglassesSlides.length > 0;
-
   const goBack = useCallback(() => {
     if (busy) return;
     setResult(null);
@@ -399,21 +397,13 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
               {topTrackItems.map((item, i) => (
                 <div
                   key={`top-${item.src}-${i}`}
-                  className={cn(
-                    "select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] md:rounded-[1.35rem]",
-                    topUsesSunglasses
-                      ? "h-20 w-36 sm:h-24 sm:w-44 md:h-28 md:w-52"
-                      : "h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36"
-                  )}
+                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.src}
                     alt=""
-                    className={cn(
-                      "pointer-events-none h-full w-full",
-                      topUsesSunglasses ? "object-contain" : "object-cover"
-                    )}
+                    className="pointer-events-none h-full w-full object-cover"
                     draggable={false}
                   />
                 </div>
