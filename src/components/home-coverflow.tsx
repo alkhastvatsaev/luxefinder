@@ -234,6 +234,22 @@ export default function HomeCoverflow({
           </div>
         )}
 
+        {!hasResult && !showPhoto && !busy && (
+          <p className="animate-rise-delay mb-3 max-w-[280px] px-5 text-center text-[15px] font-medium leading-snug tracking-[-0.02em] text-foreground/80 sm:max-w-[320px] sm:text-[16px]">
+            <GradientShimmer
+              gradient="bay"
+              easing="smooth"
+              duration={5.8}
+              spread={3}
+              pauseBetween={5000}
+              pauseBetweenMax={9000}
+              className="text-inherit font-medium tracking-inherit"
+            >
+              Envoyez ici la photo de ce que vous voulez.
+            </GradientShimmer>
+          </p>
+        )}
+
         <div className="relative flex w-screen max-w-[100vw] shrink items-center justify-center">
           {/* Lens CTA — always above bag tracks; no opacity/transform anim on this shell (breaks backdrop-filter) */}
           <div
