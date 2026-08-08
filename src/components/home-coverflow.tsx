@@ -196,7 +196,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         <ProductSearchBar onSearch={onTextSearch} disabled={busy} />
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))] pointer-events-none">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(1rem,env(safe-area-inset-bottom))] pointer-events-none">
         {result && (
           <div className="mb-2 w-full shrink-0 animate-rise pointer-events-auto">
             <SearchResultsIdentity ai={result.ai_description} />
@@ -367,7 +367,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       {showBagMarquee && topTrackBags.length > 0 && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[22%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.45] sm:h-32 md:top-[24%] md:h-36"
+          className="pointer-events-none absolute inset-x-0 top-[28%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.45] sm:h-32 md:h-36"
         >
           <MarqueeAlongSvgPath
             path={BAG_PATH}
@@ -405,7 +405,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       {showBagMarquee && midTrackBags.length > 0 && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[46%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.55] sm:h-32 md:h-36"
+          className="pointer-events-none absolute inset-x-0 top-[52%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.55] sm:h-32 md:h-36"
         >
           <MarqueeAlongSvgPath
             path={BAG_PATH}
@@ -439,10 +439,10 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         </div>
       )}
 
-      {/* Straight bag track — bottom of screen (above content hit-layer so drag works) */}
+      {/* Bottom bag track — same vertical rhythm (≈ +24% from mid), interactive */}
       {showBagMarquee && trackBags.length > 0 && (
         <div
-          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-36 w-full overflow-visible sm:h-40 md:h-44"
+          className="absolute inset-x-0 top-[76%] z-20 h-36 w-full -translate-y-1/2 overflow-visible sm:h-40 md:h-44"
         >
           <MarqueeAlongSvgPath
             path={BAG_PATH}
