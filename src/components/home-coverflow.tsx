@@ -219,7 +219,7 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
               {showLensHalo && (
                 <span
                   aria-hidden
-                  className="animate-budget-halo pointer-events-none absolute -inset-3 z-0 rounded-[2rem] bg-[#0071E3]/40 blur-xl"
+                  className="animate-budget-halo pointer-events-none absolute inset-0 z-20 rounded-[1.75rem]"
                 />
               )}
               <div
@@ -237,11 +237,27 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
                   onFile(e.dataTransfer.files?.[0] || null);
                 }}
                 className={cn(
-                  "group relative z-10 flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[1.75rem] shadow-soft transition",
-                  dragging ? "bg-black/[0.03]" : "bg-gradient-to-b from-neutral-50 to-white",
+                  "group relative z-10 flex h-full w-full flex-col items-center justify-center rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
+                  showPhoto ? "overflow-hidden bg-white" : "bg-transparent",
                   busy && "pointer-events-none"
                 )}
               >
+                {/* Frost plate separate from overflow — Safari breaks backdrop-filter + overflow-hidden */}
+                {!showPhoto && (
+                  <>
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "pointer-events-none absolute inset-0 rounded-[1.75rem]",
+                        dragging ? "bg-white/25" : "bg-white/30"
+                      )}
+                    />
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/20 backdrop-blur-xl [transform:translateZ(0)] [-webkit-backdrop-filter:blur(20px)]"
+                    />
+                  </>
+                )}
                 {showPhoto ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
