@@ -5,7 +5,12 @@
  */
 
 import { hasSerpApiKey } from "./google-lens";
-import { normalizeText, REPLICA_PATTERNS, TRUSTED_DOMAINS } from "./luxury-kb";
+import {
+  normalizeText,
+  REPLICA_PATTERNS,
+  TRUSTED_DOMAINS,
+  significantQueryTokens,
+} from "./luxury-kb";
 
 export type OfferRegion = "usa" | "europe" | "asia" | "africa";
 
@@ -68,10 +73,34 @@ function classifyKind(host: string): GlobalOffer["kind"] {
   return "shopping";
 }
 
+function titleMatchesProduct(
+  titleN: string,
+  query: string,
+  required: { brand?: string; model?: string }
+): boolean {
+  const brandN = required.brand ? normalizeText(required.brand) : "";
+  const modelN = required.model ? normalizeText(required.model) : "";
+  const brandParts = brandN.split(" ").filter((t) => t.length >= 3);
+  const tokens = significantQueryTokens(query);
+
+  if (modelN.length >= 3 && !titleN.includes(modelN)) return false;
+  if (brandParts.length && !brandParts.every((p) => titleN.includes(p))) return false;
+
+  if (!modelN && tokens.length >= 2) {
+    const hits = tokens.filter((t) => titleN.includes(t)).length;
+    if (hits < Math.min(2, tokens.length)) return false;
+  } else if (!modelN && tokens.length === 1 && !titleN.includes(tokens[0])) {
+    return false;
+  }
+
+  return true;
+}
+
 async function shoppingInMarket(
   query: string,
   market: Market,
-  limit: number
+  limit: number,
+  required: { brand?: string; model?: string }
 ): Promise<GlobalOffer[]> {
   const key = serpKey();
   if (!key || !hasSerpApiKey()) return [];
@@ -101,8 +130,6 @@ async function shoppingInMarket(
       }>;
     };
 
-    const qNorm = normalizeText(query);
-    const tokens = qNorm.split(" ").filter((t) => t.length > 2);
     const out: GlobalOffer[] = [];
     const seen = new Set<string>();
 
@@ -113,8 +140,7 @@ async function shoppingInMarket(
       if (REPLICA_PATTERNS.test(title) || REPLICA_PATTERNS.test(link)) continue;
 
       const titleN = normalizeText(title);
-      const relevance = tokens.filter((t) => titleN.includes(t)).length;
-      if (tokens.length >= 2 && relevance < 1) continue;
+      if (!titleMatchesProduct(titleN, query, required)) continue;
 
       const k = link.split("?")[0].toLowerCase();
       if (seen.has(k)) continue;
@@ -151,7 +177,6 @@ function dedupeOffers(offers: GlobalOffer[]): GlobalOffer[] {
       byKey.set(key, o);
       continue;
     }
-    // Prefer entry with price / thumbnail
     const score = (x: GlobalOffer) => (x.price ? 2 : 0) + (x.thumbnail ? 1 : 0);
     if (score(o) > score(prev)) byKey.set(key, o);
   }
@@ -169,15 +194,30 @@ export type GlobalOffersResult = {
 /** Parallel deep shopping search across 4 continents. */
 export async function searchGlobalOffers(
   productQuery: string,
-  opts?: { perMarket?: number; maxOffers?: number }
+  opts?: {
+    perMarket?: number;
+    maxOffers?: number;
+    brand?: string;
+    model?: string;
+  }
 ): Promise<GlobalOffersResult> {
   const q = productQuery.trim().slice(0, 160);
   const perMarket = opts?.perMarket ?? 8;
   const maxOffers = opts?.maxOffers ?? 60;
+  const required = {
+    brand: opts?.brand?.trim() || undefined,
+    model: opts?.model?.trim() || undefined,
+  };
 
-  if (!q || !serpKey() || !hasSerpApiKey()) {
+  // Prefer "Brand Model" query when both are known — cleaner shopping hits
+  const shoppingQuery =
+    required.brand && required.model
+      ? `${required.brand} ${required.model}`.slice(0, 160)
+      : q;
+
+  if (!shoppingQuery || !serpKey() || !hasSerpApiKey()) {
     return {
-      query: q,
+      query: shoppingQuery,
       offers: [],
       by_region: { usa: 0, europe: 0, asia: 0, africa: 0 },
       markets_ok: 0,
@@ -185,11 +225,8 @@ export async function searchGlobalOffers(
     };
   }
 
-  // Avoid appending "bag" blindly — query already names the article.
-  const shoppingQuery = q;
-
   const settled = await Promise.allSettled(
-    MARKETS.map((m) => shoppingInMarket(shoppingQuery, m, perMarket))
+    MARKETS.map((m) => shoppingInMarket(shoppingQuery, m, perMarket, required))
   );
 
   let marketsOk = 0;
@@ -210,7 +247,6 @@ export async function searchGlobalOffers(
   };
   for (const o of offers) by_region[o.region] += 1;
 
-  // Stable sort: resale/official first, then by region order
   const regionOrder: OfferRegion[] = ["europe", "usa", "asia", "africa"];
   const kindOrder = { official: 0, resale: 1, shopping: 2, other: 3 } as const;
   offers.sort((a, b) => {
@@ -220,7 +256,7 @@ export async function searchGlobalOffers(
   });
 
   return {
-    query: q,
+    query: shoppingQuery,
     offers,
     by_region,
     markets_ok: marketsOk,

@@ -4,7 +4,7 @@
 
 import { hasSerpApiKey } from "./google-lens";
 import type { RankedMatch } from "./google-lens";
-import { normalizeText, REPLICA_PATTERNS, TRUSTED_DOMAINS } from "./luxury-kb";
+import { normalizeText, REPLICA_PATTERNS, TRUSTED_DOMAINS, significantQueryTokens } from "./luxury-kb";
 
 function serpKey(): string {
   return (process.env.SERPAPI_KEY || process.env.SERP_API_KEY || "").trim();
@@ -55,8 +55,7 @@ export async function fetchGoogleShoppingProducts(
       }>;
     };
 
-    const qNorm = normalizeText(q);
-    const tokens = qNorm.split(" ").filter((t) => t.length > 2);
+    const tokens = significantQueryTokens(q);
     const out: ShoppingProduct[] = [];
     const seen = new Set<string>();
 
@@ -68,8 +67,9 @@ export async function fetchGoogleShoppingProducts(
 
       const titleN = normalizeText(title);
       const relevance = tokens.filter((t) => titleN.includes(t)).length;
-      // Skip vague / unrelated shopping noise
-      if (tokens.length >= 2 && relevance < 1) continue;
+      // Require most of the meaningful tokens (brand + model), not a single weak hit
+      if (tokens.length >= 2 && relevance < Math.min(2, tokens.length)) continue;
+      if (tokens.length === 1 && relevance < 1) continue;
 
       const k = link.split("?")[0].toLowerCase();
       if (seen.has(k)) continue;

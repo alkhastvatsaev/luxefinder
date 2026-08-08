@@ -455,7 +455,15 @@ export async function handleWebOffers(clientToken: string) {
   if (!req) throw Object.assign(new Error("request not found"), { status: 404 });
 
   const query = productLine(req);
-  const result = await searchGlobalOffers(query, { perMarket: 8, maxOffers: 72 });
+  const ai = (req.ai_description || {}) as { brand?: string; model?: string };
+  const brand = String(ai.brand || "").trim();
+  const model = String(ai.model || "").trim();
+  const result = await searchGlobalOffers(query, {
+    perMarket: 8,
+    maxOffers: 72,
+    brand: brand && brand !== "inconnue" ? brand : undefined,
+    model: model && model !== "article luxe" ? model : undefined,
+  });
 
   return {
     ok: true,

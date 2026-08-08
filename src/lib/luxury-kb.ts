@@ -46,6 +46,22 @@ export const LUXURY_MODELS: LuxuryModel[] = [
   { brand: "Gucci", model: "Jackie", aliases: ["jackie", "jackie 1961"], category: "sac" },
   { brand: "Gucci", model: "Marmont", aliases: ["marmont", "gg marmont"], category: "sac" },
   { brand: "Gucci", model: "Horsebit", aliases: ["horsebit", "1955 horsebit"], category: "sac" },
+  {
+    brand: "Gucci",
+    model: "Ophidia",
+    aliases: [
+      "ophidia",
+      "ophidia gg",
+      "ophidia supreme",
+      "ophidia shoulder",
+      "ophidia small",
+      "ophidia mini",
+      "sac ophidia",
+      "sac a epaule ophidia",
+      "ophidia gg supreme",
+    ],
+    category: "sac",
+  },
   // Saint Laurent
   { brand: "Saint Laurent", model: "Loulou", aliases: ["loulou", "lou lou"], category: "sac" },
   { brand: "Saint Laurent", model: "Sunset", aliases: ["sunset"], category: "sac" },
@@ -107,6 +123,68 @@ export function normalizeText(s: string): string {
     .trim();
 }
 
+/** Generic shopping words that must not drive model matching alone. */
+const QUERY_STOPWORDS = new Set([
+  "sac",
+  "bag",
+  "bags",
+  "tote",
+  "handbag",
+  "handbags",
+  "shoulder",
+  "crossbody",
+  "bandeuliere",
+  "bandouliere",
+  "epaule",
+  "mini",
+  "small",
+  "large",
+  "petit",
+  "petite",
+  "grand",
+  "grande",
+  "format",
+  "femme",
+  "femmes",
+  "homme",
+  "hommes",
+  "woman",
+  "women",
+  "man",
+  "men",
+  "the",
+  "and",
+  "for",
+  "with",
+  "de",
+  "du",
+  "des",
+  "la",
+  "le",
+  "les",
+  "un",
+  "une",
+  "et",
+  "en",
+  "au",
+  "aux",
+  "sur",
+  "pour",
+  "avec",
+  "dans",
+  "que",
+  "vous",
+  "cherchez",
+  "voulez",
+]);
+
+/** Meaningful query tokens for KB + offer matching. */
+export function significantQueryTokens(query: string): string[] {
+  return normalizeText(query)
+    .split(" ")
+    .filter((t) => t.length >= 3 && !QUERY_STOPWORDS.has(t));
+}
+
 export type LuxurySuggestion = {
   brand: string;
   model: string;
@@ -120,40 +198,67 @@ export function suggestLuxuryModels(query: string, limit = 8): LuxurySuggestion[
   const q = normalizeText(query);
   if (q.length < 2) return [];
 
-  const tokens = q.split(" ").filter(Boolean);
+  const tokens = significantQueryTokens(query);
+  if (!tokens.length && q.length < 3) return [];
   const scored: LuxurySuggestion[] = [];
 
   for (const item of LUXURY_MODELS) {
     const brandN = normalizeText(item.brand);
     const modelN = normalizeText(item.model);
-    const haystack = [brandN, modelN, ...item.aliases.map(normalizeText)].join(" ");
+    const aliasesN = item.aliases.map(normalizeText);
+    const haystack = [brandN, modelN, ...aliasesN].join(" ");
     const label = `${item.brand} ${item.model}`;
 
     let score = 0;
+    let modelHit = false;
+    let brandHit = false;
+
     if (haystack.startsWith(q) || brandN.startsWith(q) || modelN.startsWith(q)) score += 120;
-    if (haystack.includes(q)) score += 80;
-    for (const t of tokens) {
-      if (brandN.includes(t)) score += 40;
-      if (modelN.includes(t)) score += 50;
-      if (item.aliases.some((a) => normalizeText(a).includes(t))) score += 35;
-      if (haystack.includes(t)) score += 10;
-    }
-    // Prefer exact alias prefix matches (Google-like)
-    for (const a of item.aliases) {
-      const an = normalizeText(a);
-      if (an.startsWith(q)) score += 60;
-      else if (an.includes(q)) score += 25;
+    if (modelN === q || aliasesN.includes(q)) {
+      score += 200;
+      modelHit = true;
+    } else if (haystack.includes(q) && q.length >= 4) {
+      score += 80;
+      if (modelN.includes(q) || aliasesN.some((a) => a.includes(q))) modelHit = true;
+      if (brandN.includes(q)) brandHit = true;
     }
 
-    if (score > 0) {
-      scored.push({
-        brand: item.brand,
-        model: item.model,
-        label,
-        category: item.category,
-        score,
-      });
+    for (const t of tokens) {
+      if (brandN.includes(t) || brandN.split(" ").includes(t)) {
+        score += 45;
+        brandHit = true;
+      }
+      if (modelN === t || modelN.includes(t)) {
+        score += 90;
+        modelHit = true;
+      }
+      if (aliasesN.some((a) => a === t || a.includes(t) || t.includes(modelN))) {
+        score += 70;
+        modelHit = true;
+      }
     }
+
+    for (const a of aliasesN) {
+      if (a.startsWith(q) && q.length >= 3) {
+        score += 100;
+        modelHit = true;
+      } else if (q.length >= 4 && a.includes(q)) {
+        score += 40;
+        modelHit = true;
+      }
+    }
+
+    // Never suggest from stopwords / single letters alone — need a model (or strong brand+model) hit
+    if (!modelHit && !(brandHit && tokens.some((t) => modelN.includes(t)))) continue;
+    if (score < 40) continue;
+
+    scored.push({
+      brand: item.brand,
+      model: item.model,
+      label,
+      category: item.category,
+      score,
+    });
   }
 
   scored.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
