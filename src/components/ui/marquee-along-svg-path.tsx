@@ -91,6 +91,12 @@ interface MarqueeAlongSvgPathProps {
   keepUpright?: boolean;
 
   responsive?: boolean;
+
+  /**
+   * Fires on a tap/click (little movement) on an item marked with
+   * `data-marquee-preview`. Dragging the track does not trigger it.
+   */
+  onItemPreview?: (src: string) => void;
 }
 
 type MarqueeItemMeta = {
@@ -224,6 +230,7 @@ const MarqueeAlongSvgPath = ({
   fadeEnds = 0,
   keepUpright = false,
   responsive = false,
+  onItemPreview,
 }: MarqueeAlongSvgPathProps) => {
   const container = useRef<HTMLDivElement>(null);
   const marqueeContainerRef = useRef<HTMLDivElement>(null);
@@ -372,6 +379,8 @@ const MarqueeAlongSvgPath = ({
   });
 
   const lastPointerPosition = useRef({ x: 0, y: 0 });
+  const dragDistance = useRef(0);
+  const previewCandidate = useRef<string | null>(null);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!draggable) return;
@@ -386,7 +395,10 @@ const MarqueeAlongSvgPath = ({
 
     isDragging.current = true;
     lastPointerPosition.current = { x: e.clientX, y: e.clientY };
+    dragDistance.current = 0;
     dragVelocity.current = 0;
+    const hit = (e.target as Element | null)?.closest?.("[data-marquee-preview]");
+    previewCandidate.current = hit?.getAttribute("data-marquee-preview") ?? null;
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -394,9 +406,11 @@ const MarqueeAlongSvgPath = ({
 
     const currentPosition = { x: e.clientX, y: e.clientY };
     const deltaX = currentPosition.x - lastPointerPosition.current.x;
+    const deltaY = currentPosition.y - lastPointerPosition.current.y;
     // Path is mostly horizontal — bias X, keep a little Y so diagonal drags feel natural
-    const projectedDelta = deltaX + (currentPosition.y - lastPointerPosition.current.y) * 0.25;
+    const projectedDelta = deltaX + deltaY * 0.25;
 
+    dragDistance.current += Math.hypot(deltaX, deltaY);
     dragVelocity.current = projectedDelta * dragSensitivity;
     lastPointerPosition.current = currentPosition;
   };
@@ -413,6 +427,12 @@ const MarqueeAlongSvgPath = ({
     if (grabCursor) {
       (e.currentTarget as HTMLElement).style.cursor = "grab";
     }
+
+    // Tap vs drag — open preview when the finger barely moved
+    if (onItemPreview && dragDistance.current < 10 && previewCandidate.current) {
+      onItemPreview(previewCandidate.current);
+    }
+    previewCandidate.current = null;
   };
 
   return (

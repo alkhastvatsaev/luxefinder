@@ -9,6 +9,7 @@ import { BrandMark } from "@/components/ui/brand-mark";
 import { AmbientBirds } from "@/components/ui/ambient-birds";
 import { ProductSearchBar } from "@/components/ui/product-search-bar";
 import MarqueeAlongSvgPath from "@/components/ui/marquee-along-svg-path";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { SearchResultsIdentity, SearchResultsActions } from "@/components/search-results";
 import { luxefinderApi, type AiDescription } from "@/lib/api";
 import { lensFaceClassName } from "@/lib/lens-glass";
@@ -42,6 +43,15 @@ export default function HomeCoverflow({
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [budget, setBudget] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const openPreview = useCallback((src: string) => {
+    setPreviewImage(src);
+  }, []);
+
+  const closePreview = useCallback(() => {
+    setPreviewImage(null);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -403,11 +413,13 @@ export default function HomeCoverflow({
               enableRollingZIndex
               zIndexBase={1}
               zIndexRange={6}
+              onItemPreview={openPreview}
             >
               {topTrackItems.map((item, i) => (
                 <div
                   key={`top-${item.src}-${i}`}
-                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                  data-marquee-preview={item.src}
+                  className="h-28 w-28 cursor-pointer select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -442,11 +454,13 @@ export default function HomeCoverflow({
               enableRollingZIndex
               zIndexBase={1}
               zIndexRange={6}
+              onItemPreview={openPreview}
             >
               {midTrackItems.map((item, i) => (
                 <div
                   key={`mid-${item.src}-${i}`}
-                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                  data-marquee-preview={item.src}
+                  className="h-28 w-28 cursor-pointer select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -480,11 +494,13 @@ export default function HomeCoverflow({
               enableRollingZIndex
               zIndexBase={1}
               zIndexRange={8}
+              onItemPreview={openPreview}
             >
               {trackBags.map((bag, i) => (
                 <div
                   key={`${bag.src}-${i}`}
-                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                  data-marquee-preview={bag.src}
+                  className="h-28 w-28 cursor-pointer select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -499,6 +515,8 @@ export default function HomeCoverflow({
           </div>
         </div>
       )}
+
+      <ImageLightbox src={previewImage} onClose={closePreview} />
     </main>
   );
 }

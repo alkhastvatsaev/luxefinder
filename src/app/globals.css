@@ -176,3 +176,31 @@
 .lens-glass-dragging {
   background: rgba(255, 255, 255, 0.2);
 }
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lightbox-image {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-lightbox-in {
+  animation: lightbox-in 0.2s ease-out both;
+}
+
+.animate-lightbox-image {
+  animation: lightbox-image 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
