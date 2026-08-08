@@ -165,6 +165,17 @@ export default function HomeCoverflow({
   /** Step 1: pulse behind the Lens square until the user uploads or searches. */
   const showLensHalo = !hasResult && !showPhoto && !busy;
   const showBagMarquee = !hasResult && !showPhoto && !busy;
+  const [lensHintVisible, setLensHintVisible] = useState(true);
+
+  useEffect(() => {
+    if (!showLensHalo) {
+      setLensHintVisible(true);
+      return;
+    }
+    setLensHintVisible(true);
+    const t = window.setTimeout(() => setLensHintVisible(false), 10_000);
+    return () => window.clearTimeout(t);
+  }, [showLensHalo]);
 
   /** Bag count on the loop controls spacing (width/N). */
   const trackBags = useMemo(() => {
@@ -313,13 +324,19 @@ export default function HomeCoverflow({
                   </div>
                 ) : (
                   <span
-                    className="group relative z-10 flex h-full w-full touch-manipulation flex-col items-center justify-center gap-2.5 px-5 outline-none"
+                    className="group relative z-10 flex h-full w-full touch-manipulation items-center justify-center outline-none"
                     onPointerDown={(e) => e.stopPropagation()}
                     onPointerUp={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <LensUploadIcon className="pointer-events-none size-[3.5rem] transition-transform [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-105 md:size-[4.25rem]" />
-                    <span className="pointer-events-none max-w-[10.5rem] text-center text-[12px] font-medium leading-snug tracking-[-0.02em] text-foreground sm:text-[13px]">
+                    <span
+                      aria-hidden={!lensHintVisible}
+                      className={cn(
+                        "pointer-events-none absolute left-1/2 top-[calc(50%+2.15rem)] w-[min(100%-1.75rem,12rem)] -translate-x-1/2 text-center text-[14px] font-medium leading-snug tracking-[-0.02em] text-foreground transition-opacity duration-1000 ease-out sm:text-[15px] md:top-[calc(50%+2.55rem)]",
+                        lensHintVisible ? "opacity-100" : "opacity-0"
+                      )}
+                    >
                       Envoyez la photo de ce que vous voulez.
                     </span>
                     <input
