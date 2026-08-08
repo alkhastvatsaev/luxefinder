@@ -213,7 +213,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
               {showLensHalo && (
                 <span
                   aria-hidden
-                  className="animate-budget-halo pointer-events-none absolute -inset-3 z-0 rounded-[2rem] bg-[#0071E3]/40 blur-xl"
+                  className="animate-budget-halo pointer-events-none absolute inset-0 z-20 rounded-[1.75rem]"
                 />
               )}
               <div
