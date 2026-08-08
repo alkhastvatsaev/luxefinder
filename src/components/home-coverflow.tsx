@@ -158,6 +158,13 @@ export default function HomeCoverflow({ bagSlides }: Props) {
     });
   }, [bagSlides]);
 
+  /** Middle row uses a shifted set so both tracks don't mirror 1:1. */
+  const midTrackBags = useMemo(() => {
+    if (!trackBags.length) return trackBags;
+    const shift = Math.floor(trackBags.length / 2);
+    return [...trackBags.slice(shift), ...trackBags.slice(0, shift)].reverse();
+  }, [trackBags]);
+
   const goBack = useCallback(() => {
     if (busy) return;
     setResult(null);
@@ -348,6 +355,44 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           )}
         </div>
       </div>
+
+      {/* Mid bag track — behind Lens, opposite direction */}
+      {showBagMarquee && midTrackBags.length > 0 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-[46%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.55] sm:h-32 md:h-36"
+        >
+          <MarqueeAlongSvgPath
+            path={BAG_PATH}
+            viewBox="0 0 1600 100"
+            baseVelocity={5}
+            direction="reverse"
+            draggable={false}
+            repeat={1}
+            fadeEnds={8}
+            keepUpright
+            className="h-full w-full"
+            enableRollingZIndex
+            zIndexBase={1}
+            zIndexRange={6}
+          >
+            {midTrackBags.map((bag, i) => (
+              <div
+                key={`mid-${bag.src}-${i}`}
+                className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={bag.src}
+                  alt=""
+                  className="pointer-events-none h-full w-full object-cover"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </MarqueeAlongSvgPath>
+        </div>
+      )}
 
       {/* Straight bag track — bottom of screen (above content hit-layer so drag works) */}
       {showBagMarquee && trackBags.length > 0 && (
