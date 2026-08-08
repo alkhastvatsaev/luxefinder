@@ -1,4 +1,4 @@
-import { listPicsSlides, listSunglassesSlides } from "@/lib/pics";
+import { listPicsSlides, listSunglassesSlides, listJewelrySlides } from "@/lib/pics";
 import HomeCoverflow from "@/components/home-coverflow";
 
 const jsonLd = {
@@ -51,6 +51,7 @@ const jsonLd = {
 export default function HomePage() {
   const bagSlides = listPicsSlides();
   const sunglassesSlides = listSunglassesSlides();
+  const jewelrySlides = listJewelrySlides();
   return (
     <>
       <script
@@ -62,7 +63,11 @@ export default function HomePage() {
         LuxeFinder (Luxe Finder) — envoyez une photo, indiquez votre budget, on trouve les vendeurs
         de sacs et accessoires de luxe sur luxefinder.app
       </h1>
-      <HomeCoverflow bagSlides={bagSlides} sunglassesSlides={sunglassesSlides} />
+      <HomeCoverflow
+        bagSlides={bagSlides}
+        sunglassesSlides={sunglassesSlides}
+        jewelrySlides={jewelrySlides}
+      />
     </>
   );
 }

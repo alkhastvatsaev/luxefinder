@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   bagSlides: { src: string; alt: string; title: string }[];
   sunglassesSlides?: { src: string; alt: string; title: string }[];
+  jewelrySlides?: { src: string; alt: string; title: string }[];
 };
 
 type Result = {
@@ -28,7 +29,11 @@ type Result = {
 /** Straight horizontal track — long enough for mobile→desktop without CSS scale-down. */
 const BAG_PATH = "M0 50 L1600 50";
 
-export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Props) {
+export default function HomeCoverflow({
+  bagSlides,
+  sunglassesSlides = [],
+  jewelrySlides = [],
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -171,12 +176,20 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
     });
   }, [sunglassesSlides, bagSlides]);
 
-  /** Middle row uses a shifted set so both tracks don't mirror 1:1. */
-  const midTrackBags = useMemo(() => {
+  /** Middle row — jewelry when available, else shifted bags. */
+  const midTrackItems = useMemo(() => {
+    if (jewelrySlides.length) {
+      const max = 8;
+      if (jewelrySlides.length <= max) return jewelrySlides;
+      return Array.from({ length: max }, (_, i) => {
+        const idx = Math.round((i * (jewelrySlides.length - 1)) / (max - 1));
+        return jewelrySlides[idx];
+      });
+    }
     if (!trackBags.length) return trackBags;
     const shift = Math.floor(trackBags.length / 2);
     return [...trackBags.slice(shift), ...trackBags.slice(0, shift)].reverse();
-  }, [trackBags]);
+  }, [jewelrySlides, trackBags]);
 
   const goBack = useCallback(() => {
     if (busy) return;
@@ -427,7 +440,7 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
             </MarqueeAlongSvgPath>
           </div>
 
-          {/* Mid — reverse, behind Lens (grabable around the CTA) */}
+          {/* Mid — jewelry when synced, reverse, behind Lens */}
           <div className="relative z-10 h-32 w-full shrink-0 overflow-visible pointer-events-auto sm:h-36 md:h-40">
             <MarqueeAlongSvgPath
               path={BAG_PATH}
@@ -449,14 +462,14 @@ export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Prop
               zIndexBase={1}
               zIndexRange={6}
             >
-              {midTrackBags.map((bag, i) => (
+              {midTrackItems.map((item, i) => (
                 <div
-                  key={`mid-${bag.src}-${i}`}
+                  key={`mid-${item.src}-${i}`}
                   className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={bag.src}
+                    src={item.src}
                     alt=""
                     className="pointer-events-none h-full w-full object-cover"
                     draggable={false}

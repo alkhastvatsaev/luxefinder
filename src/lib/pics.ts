@@ -45,3 +45,13 @@ export function listSunglassesSlides(): Slide[] {
     title: "",
   }));
 }
+
+/** Jewelry from public/jewelry (mid home marquee via sync-jewelry). */
+export function listJewelrySlides(): Slide[] {
+  const files = listImagesIn(path.join(process.cwd(), "public", "jewelry"));
+  return files.map((f, i) => ({
+    src: `/jewelry/${f}?v=1`,
+    alt: `Bijou ${i + 1}`,
+    title: "",
+  }));
+}
