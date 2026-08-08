@@ -1,0 +1,23 @@
+---
+description: Keep the home Lens CTA frosted/transparent unless the user explicitly asks otherwise
+globs: src/components/home-coverflow.tsx,src/app/globals.css
+alwaysApply: true
+---
+
+# Lens CTA frost (do not regress)
+
+The centered home upload button (Lens) must stay **semi-transparent frosted glass** in the idle state.
+
+## Required look
+- Idle: use the CSS classes `lens-glass` / `lens-glass-dragging` from `src/app/globals.css`
+- Photo state only: opaque white + `overflow-hidden` is OK
+- Soft blue frame halo via `animate-budget-halo` stays
+
+## Never do without an explicit user request
+- Restore solid fills like `bg-white`, `from-neutral-50 to-white`, or heavy `bg-white/80+` underlays on the idle Lens
+- Put `opacity` / fade entrance animations on any **ancestor** of the Lens frost (breaks `backdrop-filter` until the anim ends)
+- Combine `overflow-hidden` with `backdrop-filter` on the idle Lens face (Safari bug)
+- Revert to an old “solid Lens checkpoint” when shipping unrelated marquee/asset updates
+
+## When editing marquees / jewelry / sunglasses / bags
+Touch only the track props and slide lists. Leave the Lens shell classes alone unless the task is specifically about the Lens.

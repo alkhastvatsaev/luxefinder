@@ -163,3 +163,16 @@
 .animate-budget-halo {
   animation: budget-halo 2s ease-in-out infinite;
 }
+
+/* Canonical Lens CTA frost — keep this; do not replace with opaque white fills */
+.lens-glass {
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  transform: translateZ(0);
+  will-change: backdrop-filter;
+}
+
+.lens-glass-dragging {
+  background: rgba(255, 255, 255, 0.2);
+}

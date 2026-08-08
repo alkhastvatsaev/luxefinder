@@ -251,26 +251,12 @@ export default function HomeCoverflow({
                 }}
                 className={cn(
                   "group relative z-10 flex h-full w-full flex-col items-center justify-center rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
-                  showPhoto ? "overflow-hidden bg-white" : "bg-transparent",
+                  showPhoto
+                    ? "overflow-hidden bg-white"
+                    : cn("lens-glass", dragging && "lens-glass-dragging"),
                   busy && "pointer-events-none"
                 )}
               >
-                {/* Frost plate separate from overflow — Safari breaks backdrop-filter + overflow-hidden */}
-                {!showPhoto && (
-                  <>
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "pointer-events-none absolute inset-0 rounded-[1.75rem]",
-                        dragging ? "bg-white/25" : "bg-white/30"
-                      )}
-                    />
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-[1.75rem] bg-white/20 backdrop-blur-xl will-change-[backdrop-filter] [transform:translateZ(0)] [-webkit-backdrop-filter:blur(20px)]"
-                    />
-                  </>
-                )}
                 {showPhoto ? (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
