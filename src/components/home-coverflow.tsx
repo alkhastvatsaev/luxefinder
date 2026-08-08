@@ -172,9 +172,9 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         <ProductSearchBar onSearch={onTextSearch} disabled={busy} />
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(8.5rem,calc(env(safe-area-inset-bottom)+7.5rem))] pointer-events-none">
         {result && (
-          <div className="mb-2 w-full shrink-0 animate-rise">
+          <div className="mb-2 w-full shrink-0 animate-rise pointer-events-auto">
             <SearchResultsIdentity ai={result.ai_description} />
           </div>
         )}
@@ -182,7 +182,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         <div className="animate-rise-delay relative flex w-screen max-w-[100vw] shrink items-center justify-center">
           {/* Lens CTA — centered */}
           <div
-            className="relative z-20"
+            className="relative z-20 pointer-events-auto"
             style={{ width: lensSize, height: lensSize }}
           >
             <div className="relative h-full w-full">
@@ -289,7 +289,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           </div>
         </div>
 
-        <div className="relative z-10 mt-3 flex w-full shrink-0 flex-col items-center gap-2.5 px-5">
+        <div className="relative z-10 mt-3 flex w-full shrink-0 flex-col items-center gap-2.5 px-5 pointer-events-auto">
           {!hasResult && !showPhoto && !busy && (
             <p className="animate-rise-delay max-w-[280px] text-center text-[15px] font-semibold leading-snug tracking-[-0.02em] text-foreground sm:text-[16px]">
               Vous savez ce que vous voulez.
@@ -339,11 +339,10 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         </div>
       </div>
 
-      {/* Straight bag track — bottom of screen */}
+      {/* Straight bag track — bottom of screen (above content hit-layer so drag works) */}
       {showBagMarquee && bagSlides.length > 0 && (
         <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-0 h-[7.5rem] w-full overflow-visible sm:h-36 md:h-40"
+          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-[7.5rem] w-full overflow-visible sm:h-36 md:h-40"
         >
           <MarqueeAlongSvgPath
             path={BAG_PATH}
@@ -353,19 +352,19 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             slowDownFactor={0.25}
             draggable
             grabCursor
-            dragSensitivity={0.12}
+            dragSensitivity={0.18}
             dragVelocityDecay={0.94}
             dragAwareDirection
             repeat={1}
-            fadeEnds={14}
+            fadeEnds={12}
             keepUpright
-            className="h-full w-full"
+            className="h-full w-full cursor-grab"
             responsive
             enableRollingZIndex
             zIndexBase={1}
             zIndexRange={8}
           >
-            {bagSlides.map((bag, i) => (
+            {bagSlides.flatMap((bag, i) => [
               <div
                 key={`${bag.src}-${i}`}
                 className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
@@ -377,8 +376,14 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                   className="pointer-events-none h-full w-full object-cover"
                   draggable={false}
                 />
-              </div>
-            ))}
+              </div>,
+              // Invisible slot to open air between bags along the path
+              <div
+                key={`gap-${i}`}
+                aria-hidden
+                className="pointer-events-none h-16 w-16 opacity-0 sm:h-20 sm:w-20 md:h-24 md:w-24"
+              />,
+            ])}
           </MarqueeAlongSvgPath>
         </div>
       )}
