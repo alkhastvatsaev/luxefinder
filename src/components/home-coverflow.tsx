@@ -235,7 +235,7 @@ export default function HomeCoverflow({
         )}
 
         {!hasResult && !showPhoto && !busy && (
-          <p className="animate-rise-delay mb-3 max-w-[280px] px-5 text-center text-[15px] font-medium leading-snug tracking-[-0.02em] text-foreground/80 sm:max-w-[320px] sm:text-[16px]">
+          <p className="animate-rise-delay mb-3 max-w-[340px] px-5 text-center text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:max-w-[400px] sm:text-[26px] md:text-[28px]">
             <GradientShimmer
               gradient="bay"
               easing="smooth"
@@ -243,9 +243,9 @@ export default function HomeCoverflow({
               spread={3}
               pauseBetween={5000}
               pauseBetweenMax={9000}
-              className="text-inherit font-medium tracking-inherit"
+              className="text-inherit font-semibold tracking-inherit"
             >
-              Envoyez ici la photo de ce que vous voulez.
+              Envoyez la photo de ce que vous voulez.
             </GradientShimmer>
           </p>
         )}
