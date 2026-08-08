@@ -7,6 +7,7 @@ import { put, list } from "@vercel/blob";
 import {
   normalizeText,
   significantQueryTokens,
+  isStrongModelName,
   type LuxuryModel,
   type LuxurySuggestion,
   suggestLuxuryModels,
@@ -70,7 +71,7 @@ export async function upsertCatalogProduct(input: {
   const model = String(input.model || "").trim().slice(0, 120);
   if (!brand || !model) return null;
   if (/^inconnue$/i.test(brand)) return null;
-  if (/^(article luxe|tote|bag|handbag|sac)\b/i.test(model)) return null;
+  if (!isStrongModelName(model)) return null;
 
   const id = productId(brand, model);
   const now = new Date().toISOString();

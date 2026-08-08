@@ -21,7 +21,7 @@ import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product"
 import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
 import { fetchGoogleShoppingProducts, fetchProductThumbnail } from "./google-text-search";
 import { searchGlobalOffers } from "./global-offers";
-import { significantQueryTokens, normalizeText } from "./luxury-kb";
+import { significantQueryTokens, normalizeText, isStrongModelName, findKnownModelInTitle } from "./luxury-kb";
 import {
   suggestAllModels,
   upsertCatalogProduct,
@@ -32,12 +32,45 @@ import { makeRoiCrops } from "./image-crops";
 import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
 
 function productLine(rfq: Rfq): string {
-  if (rfq.user_edit?.trim()) return rfq.user_edit.trim().slice(0, 180);
-  const ai = rfq.ai_description || {};
-  const parts = [ai.brand, ai.model, ai.color];
-  const line = parts.filter((p) => p && String(p) !== "inconnue").join(" ");
-  if (line) return line.slice(0, 180);
-  return String(ai.summary || "article demandé").slice(0, 180);
+  const id = resolveOfferIdentity(rfq);
+  return id.query;
+}
+
+/** Strict brand + model for offer search — never glue color placeholders. */
+function resolveOfferIdentity(rfq: Rfq): {
+  query: string;
+  brand?: string;
+  model?: string;
+} {
+  const ai = (rfq.ai_description || {}) as Record<string, unknown>;
+  const userEdit = String(rfq.user_edit || "").trim();
+  const productName = String(
+    ai.product_name || ai.lens_title || ai.best_guess || ai.summary || ""
+  ).trim();
+  const source = userEdit || productName;
+
+  let brand = String(ai.brand || "").trim();
+  let model = String(ai.model || "").trim();
+  if (/^inconnue$/i.test(brand)) brand = "";
+  if (!isStrongModelName(model)) model = "";
+
+  if (source) {
+    const known = findKnownModelInTitle(source);
+    if (known) {
+      brand = known.brand;
+      model = known.model;
+    } else {
+      const parsed = parseTitleBrandModel(source);
+      if (parsed.brand) brand = parsed.brand;
+      if (isStrongModelName(parsed.model)) model = String(parsed.model);
+    }
+  }
+
+  if (brand && isStrongModelName(model)) {
+    return { query: `${brand} ${model}`.slice(0, 160), brand, model };
+  }
+  if (source) return { query: source.slice(0, 160), brand: brand || undefined, model: model || undefined };
+  return { query: "article demandé", brand: brand || undefined, model: model || undefined };
 }
 
 /** Persist a confident identity into the living catalogue (fire-and-forget safe). */
@@ -46,6 +79,7 @@ async function rememberProduct(ai: Record<string, unknown>, thumbnail?: string) 
   const model = String(ai.model || "").trim();
   const confidence = Number(ai.confidence || 0);
   if (confidence > 0 && confidence < 0.65) return;
+  if (!isStrongModelName(model)) return;
   await upsertCatalogProduct({
     brand,
     model,
@@ -546,22 +580,19 @@ export async function handleWebOffers(clientToken: string) {
   const req = await getRfqByClientToken(clientToken);
   if (!req) throw Object.assign(new Error("request not found"), { status: 404 });
 
-  const query = productLine(req);
-  const ai = (req.ai_description || {}) as { brand?: string; model?: string };
-  const brand = String(ai.brand || "").trim();
-  const model = String(ai.model || "").trim();
-  const result = await searchGlobalOffers(query, {
-    perMarket: 8,
+  const id = resolveOfferIdentity(req);
+  const result = await searchGlobalOffers(id.query, {
+    perMarket: 10,
     maxOffers: 72,
-    brand: brand && brand !== "inconnue" ? brand : undefined,
-    model: model && model !== "article luxe" ? model : undefined,
+    brand: id.brand,
+    model: id.model,
   });
 
   return {
     ok: true,
     request_id: req.id,
     client_token: req.client_token,
-    product: query,
+    product: id.query,
     photo_url: req.photo_url,
     client_budget: req.client_budget,
     client_budget_currency: req.client_budget_currency,

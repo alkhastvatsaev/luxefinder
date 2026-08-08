@@ -2,7 +2,14 @@
  * Google Lens via SerpAPI — exact product name + ranked web/shopping links.
  */
 
-import { TRUSTED_DOMAINS, REPLICA_PATTERNS, normalizeText } from "./luxury-kb";
+import {
+  TRUSTED_DOMAINS,
+  REPLICA_PATTERNS,
+  normalizeText,
+  findKnownModelInTitle,
+  cleanModelFromTitleRemainder,
+  isStrongModelName,
+} from "./luxury-kb";
 
 export type LensProduct = {
   title: string;
@@ -285,10 +292,15 @@ export function bestLensTitle(products: LensProduct[]): string {
   return sorted[0]?.title || "";
 }
 
-/** Parse brand/model hints from a Lens title. */
+/** Parse brand/model hints from a Lens / shopping title. */
 export function parseTitleBrandModel(title: string): { brand?: string; model?: string } {
   const t = title.trim();
   if (!t) return {};
+
+  // Prefer known catalogue models when present in the title
+  const known = findKnownModelInTitle(t);
+  if (known) return known;
+
   const brands = [
     "Louis Vuitton",
     "Hermès",
@@ -311,9 +323,22 @@ export function parseTitleBrandModel(title: string): { brand?: string; model?: s
     if (normalizeText(t).includes(normalizeText(b))) {
       const re = new RegExp(b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       let model = t.replace(re, "").replace(/^[\s\-–—|:]+/, "").trim();
-      model = model.replace(/\s*[|\-–].*$/, "").slice(0, 100);
-      return { brand: b === "Hermes" ? "Hermès" : b === "Céline" ? "Celine" : b === "Yves Saint Laurent" ? "Saint Laurent" : b, model };
+      model = model.replace(/\s*[|\-–].*$/, "").slice(0, 120);
+      model = cleanModelFromTitleRemainder(model) || model;
+      const brand =
+        b === "Hermes"
+          ? "Hermès"
+          : b === "Céline"
+            ? "Celine"
+            : b === "Yves Saint Laurent"
+              ? "Saint Laurent"
+              : b;
+      if (!isStrongModelName(model)) {
+        return { brand };
+      }
+      return { brand, model };
     }
   }
-  return { model: t.slice(0, 100) };
+  const cleaned = cleanModelFromTitleRemainder(t);
+  return cleaned ? { model: cleaned.slice(0, 100) } : { model: t.slice(0, 100) };
 }

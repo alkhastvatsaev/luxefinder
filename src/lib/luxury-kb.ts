@@ -176,6 +176,14 @@ const QUERY_STOPWORDS = new Set([
   "vous",
   "cherchez",
   "voulez",
+  "pre",
+  "owned",
+  "loved",
+  "tied",
+  "non",
+  "determinee",
+  "determine",
+  "inconnue",
 ]);
 
 /** Meaningful query tokens for KB + offer matching. */
@@ -183,6 +191,90 @@ export function significantQueryTokens(query: string): string[] {
   return normalizeText(query)
     .split(" ")
     .filter((t) => t.length >= 3 && !QUERY_STOPWORDS.has(t));
+}
+
+/** Weak / garbage model fragments (Pre-Owned → "Pre", color placeholders, etc.). */
+const WEAK_MODEL_TOKENS = new Set([
+  ...QUERY_STOPWORDS,
+  "pre",
+  "owned",
+  "loved",
+  "tied",
+  "new",
+  "used",
+  "vintage",
+  "authentic",
+  "original",
+  "non",
+  "determinee",
+  "determine",
+  "inconnue",
+  "unknown",
+  "article",
+  "luxe",
+  "luxury",
+  "collection",
+  "line",
+  "logo",
+  "gg",
+  "supreme",
+  "canvas",
+  "cuir",
+  "leather",
+  "silk",
+  "crepe",
+  "chine",
+]);
+
+export function isStrongModelName(model: string | undefined | null): boolean {
+  const m = normalizeText(String(model || ""));
+  if (m.length < 4) return false;
+  const parts = m.split(" ").filter(Boolean);
+  if (!parts.length) return false;
+  // At least one token that isn't a weak filler
+  return parts.some((p) => p.length >= 4 && !WEAK_MODEL_TOKENS.has(p));
+}
+
+/** Prefer a known catalogue model if its name appears in a free title. */
+export function findKnownModelInTitle(
+  title: string
+): { brand: string; model: string } | null {
+  const t = normalizeText(title);
+  if (t.length < 4) return null;
+  let best: { brand: string; model: string; score: number } | null = null;
+
+  for (const item of LUXURY_MODELS) {
+    const brandN = normalizeText(item.brand);
+    const modelN = normalizeText(item.model);
+    const brandOk = t.includes(brandN) || brandN.split(" ").every((p) => p.length < 3 || t.includes(p));
+
+    if (modelN.length >= 4 && t.includes(modelN)) {
+      const score = modelN.length * 10 + (brandOk ? 50 : 0);
+      if (!best || score > best.score) best = { brand: item.brand, model: item.model, score };
+    }
+    for (const a of item.aliases) {
+      const an = normalizeText(a);
+      if (an.length < 4 || !t.includes(an)) continue;
+      const score = an.length * 8 + (brandOk ? 40 : 0) + (an.includes(modelN) ? 20 : 0);
+      if (!best || score > best.score) best = { brand: item.brand, model: item.model, score };
+    }
+  }
+  return best ? { brand: best.brand, model: best.model } : null;
+}
+
+export function cleanModelFromTitleRemainder(raw: string): string {
+  let m = normalizeText(raw);
+  m = m
+    .replace(
+      /\b(pre[-\s]?owned|pre[-\s]?loved|pre[-\s]?tied|womens?|mens?|femme|femmes|homme|hommes|new|used|authentic|vintage)\b/g,
+      " "
+    )
+    .replace(/\b(non\s+determinee?|non\s+determine)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Drop leading weak tokens
+  const parts = m.split(" ").filter((p) => p && !WEAK_MODEL_TOKENS.has(p));
+  return parts.join(" ").slice(0, 100);
 }
 
 export type LuxurySuggestion = {

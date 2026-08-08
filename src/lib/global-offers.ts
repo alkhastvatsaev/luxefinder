@@ -10,6 +10,7 @@ import {
   REPLICA_PATTERNS,
   TRUSTED_DOMAINS,
   significantQueryTokens,
+  isStrongModelName,
 } from "./luxury-kb";
 
 export type OfferRegion = "usa" | "europe" | "asia" | "africa";
@@ -73,6 +74,13 @@ function classifyKind(host: string): GlobalOffer["kind"] {
   return "shopping";
 }
 
+/** Reject clear category mismatches (bow tie when looking for a bag, etc.). */
+const NON_BAG_NOISE =
+  /\b(bow\s*tie|cravate|noeud\s*papillon|wallet|portefeuille|sneaker|shoe|chaussure|watch|montre|scarf|foulard|belt\s*bag|sac\s*banane|camera\s*bag|ceinture(?!\s*bag))\b/i;
+
+const BAG_HINT =
+  /\b(bag|sac|tote|handbag|shoulder|epaule|ophidia|neverfull|speedy|birkin|kelly|marmont|jackie|dionysus|flap|pouch|jodie)\b/i;
+
 function titleMatchesProduct(
   titleN: string,
   query: string,
@@ -82,15 +90,30 @@ function titleMatchesProduct(
   const modelN = required.model ? normalizeText(required.model) : "";
   const brandParts = brandN.split(" ").filter((t) => t.length >= 3);
   const tokens = significantQueryTokens(query);
+  const queryN = normalizeText(query);
 
-  if (modelN.length >= 3 && !titleN.includes(modelN)) return false;
+  // Strong model required in title when we have one
+  if (isStrongModelName(modelN)) {
+    if (!titleN.includes(modelN)) return false;
+  } else if (tokens.length) {
+    // Fall back to distinctive query tokens (all must hit if ≤3, else ≥2)
+    const need = tokens.length <= 3 ? tokens.length : 2;
+    const hits = tokens.filter((t) => titleN.includes(t)).length;
+    if (hits < need) return false;
+  }
+
   if (brandParts.length && !brandParts.every((p) => titleN.includes(p))) return false;
 
-  if (!modelN && tokens.length >= 2) {
-    const hits = tokens.filter((t) => titleN.includes(t)).length;
-    if (hits < Math.min(2, tokens.length)) return false;
-  } else if (!modelN && tokens.length === 1 && !titleN.includes(tokens[0])) {
-    return false;
+  // If the search is bag-like, drop accessories / wrong categories
+  if (BAG_HINT.test(queryN) && NON_BAG_NOISE.test(titleN)) {
+    // Allow when the noise word is itself the model line (rare)
+    if (!(isStrongModelName(modelN) && titleN.includes(modelN) && !/bow\s*tie|cravate|wallet|sneaker|watch/i.test(titleN))) {
+      if (/bow\s*tie|cravate|wallet|sneaker|shoe|watch|scarf/i.test(titleN)) return false;
+      // Belt bag / camera bag only if model search wasn't a shoulder bag
+      if (/\b(shoulder|epaule|sac a epaule)\b/i.test(queryN) && /\b(belt\s*bag|camera\s*bag|sac\s*banane)\b/i.test(titleN)) {
+        return false;
+      }
+    }
   }
 
   return true;
