@@ -13,6 +13,7 @@
     "sync:jewelry": "node scripts/sync-jewelry.js",
     "audit:pics": "node scripts/audit-pics.js",
     "audit:lens-frost": "node scripts/audit-lens-frost.js",
+    "audit:transparent-bg": "node scripts/fix-transparent-bg.js",
     "sync:sacs": "npm run sync:pics",
     "indexnow": "tsx scripts/indexnow-submit.ts",
     "seo:export-urls": "tsx scripts/export-seo-urls.ts"

@@ -202,13 +202,8 @@ async function cutout(abs) {
 }
 
 async function toCarouselJpeg(abs) {
-  // Keep original photo (no subject cutout) — square crop for marquee tiles
-  const buf = await sharp(abs)
-    .rotate()
-    .resize(800, 800, { fit: "cover", position: "centre" })
-    .jpeg({ quality: 88 })
-    .toBuffer();
-  return { buf, method: "original" };
+  const { toCarouselJpeg: build } = require("./lib/carousel-jpeg");
+  return build(abs);
 }
 
 function hasCommittedGlasses() {
