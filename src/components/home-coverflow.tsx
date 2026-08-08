@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { LensUploadIcon } from "@/components/ui/lens-icon";
 import { SquareFrameLoader } from "@/components/ui/square-frame-loader";
@@ -147,6 +147,16 @@ export default function HomeCoverflow({ bagSlides }: Props) {
   /** Step 1: pulse behind the Lens square until the user uploads or searches. */
   const showLensHalo = !hasResult && !showPhoto && !busy;
   const showBagMarquee = !hasResult && !showPhoto && !busy;
+
+  /** Fewer bags on the loop = real air between cards (path spacing is width/N). */
+  const trackBags = useMemo(() => {
+    const max = 5;
+    if (bagSlides.length <= max) return bagSlides;
+    return Array.from({ length: max }, (_, i) => {
+      const idx = Math.round((i * (bagSlides.length - 1)) / (max - 1));
+      return bagSlides[idx];
+    });
+  }, [bagSlides]);
 
   const goBack = useCallback(() => {
     if (busy) return;
@@ -340,7 +350,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       </div>
 
       {/* Straight bag track — bottom of screen (above content hit-layer so drag works) */}
-      {showBagMarquee && bagSlides.length > 0 && (
+      {showBagMarquee && trackBags.length > 0 && (
         <div
           className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-[7.5rem] w-full overflow-visible sm:h-36 md:h-40"
         >
@@ -356,7 +366,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             dragVelocityDecay={0.94}
             dragAwareDirection
             repeat={1}
-            fadeEnds={12}
+            fadeEnds={10}
             keepUpright
             className="h-full w-full cursor-grab"
             responsive
@@ -364,7 +374,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             zIndexBase={1}
             zIndexRange={8}
           >
-            {bagSlides.flatMap((bag, i) => [
+            {trackBags.map((bag, i) => (
               <div
                 key={`${bag.src}-${i}`}
                 className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
@@ -376,14 +386,8 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                   className="pointer-events-none h-full w-full object-cover"
                   draggable={false}
                 />
-              </div>,
-              // Invisible slot to open air between bags along the path
-              <div
-                key={`gap-${i}`}
-                aria-hidden
-                className="pointer-events-none h-16 w-16 opacity-0 sm:h-20 sm:w-20 md:h-24 md:w-24"
-              />,
-            ])}
+              </div>
+            ))}
           </MarqueeAlongSvgPath>
         </div>
       )}
