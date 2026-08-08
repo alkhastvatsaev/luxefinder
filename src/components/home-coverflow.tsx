@@ -10,6 +10,7 @@ import { AmbientBirds } from "@/components/ui/ambient-birds";
 import { ProductSearchBar } from "@/components/ui/product-search-bar";
 import MarqueeAlongSvgPath from "@/components/ui/marquee-along-svg-path";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
+import { GradientShimmer } from "@/components/ui/gradient-shimmer";
 import { SearchResultsIdentity, SearchResultsActions } from "@/components/search-results";
 import { luxefinderApi, type AiDescription } from "@/lib/api";
 import { lensFaceClassName } from "@/lib/lens-glass";
@@ -341,10 +342,27 @@ export default function HomeCoverflow({
 
         <div className="relative z-30 mt-3 flex w-full shrink-0 flex-col items-center gap-2.5 px-5 pointer-events-auto">
           {!hasResult && !showPhoto && !busy && (
-            <p className="animate-rise-delay max-w-[280px] text-center text-[15px] font-semibold leading-snug tracking-[-0.02em] text-foreground sm:text-[16px]">
-              Vous savez ce que vous voulez.
-              <br />
-              On vous trouve les vendeurs.
+            <p className="animate-rise-delay flex max-w-[340px] flex-col items-center gap-0.5 text-center text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:max-w-[400px] sm:text-[26px] md:text-[28px]">
+              <GradientShimmer
+                gradient="sunrise"
+                easing="smooth"
+                duration={1.45}
+                spread={3}
+                pauseBetween={1200}
+                className="text-inherit font-semibold tracking-inherit"
+              >
+                Vous savez ce que vous voulez.
+              </GradientShimmer>
+              <GradientShimmer
+                gradient="sunrise"
+                easing="smooth"
+                duration={1.45}
+                spread={3}
+                pauseBetween={1200}
+                className="text-inherit font-semibold tracking-inherit"
+              >
+                On vous trouve les vendeurs.
+              </GradientShimmer>
             </p>
           )}
 
