@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   bagSlides: { src: string; alt: string; title: string }[];
+  sunglassesSlides?: { src: string; alt: string; title: string }[];
 };
 
 type Result = {
@@ -27,7 +28,7 @@ type Result = {
 /** Straight horizontal track — long enough for mobile→desktop without CSS scale-down. */
 const BAG_PATH = "M0 50 L1600 50";
 
-export default function HomeCoverflow({ bagSlides }: Props) {
+export default function HomeCoverflow({ bagSlides, sunglassesSlides = [] }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -158,6 +159,18 @@ export default function HomeCoverflow({ bagSlides }: Props) {
     });
   }, [bagSlides]);
 
+  /** Top row — sunglasses when available, else phased bags. */
+  const topTrackItems = useMemo(() => {
+    const source = sunglassesSlides.length ? sunglassesSlides : bagSlides;
+    const max = 8;
+    if (!source.length) return [];
+    if (source.length <= max) return source;
+    return Array.from({ length: max }, (_, i) => {
+      const idx = Math.round((i * (source.length - 1)) / (max - 1));
+      return source[idx];
+    });
+  }, [sunglassesSlides, bagSlides]);
+
   /** Middle row uses a shifted set so both tracks don't mirror 1:1. */
   const midTrackBags = useMemo(() => {
     if (!trackBags.length) return trackBags;
@@ -165,12 +178,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
     return [...trackBags.slice(shift), ...trackBags.slice(0, shift)].reverse();
   }, [trackBags]);
 
-  /** Top row — same direction as bottom, different phase from mid. */
-  const topTrackBags = useMemo(() => {
-    if (!trackBags.length) return trackBags;
-    const shift = Math.max(1, Math.floor(trackBags.length / 3));
-    return [...trackBags.slice(shift), ...trackBags.slice(0, shift)];
-  }, [trackBags]);
+  const topUsesSunglasses = sunglassesSlides.length > 0;
 
   const goBack = useCallback(() => {
     if (busy) return;
@@ -366,7 +374,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       {/* Three bag tracks — even vertical rhythm below the header; Lens/copy stay above (z-30) */}
       {showBagMarquee && trackBags.length > 0 && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[7.25rem] z-0 flex flex-col justify-evenly sm:top-[7.75rem]">
-          {/* Top — same direction as bottom */}
+          {/* Top — sunglasses when synced, else bags */}
           <div className="relative z-10 h-32 w-full shrink-0 overflow-visible pointer-events-auto sm:h-36 md:h-40">
             <MarqueeAlongSvgPath
               path={BAG_PATH}
@@ -388,16 +396,24 @@ export default function HomeCoverflow({ bagSlides }: Props) {
               zIndexBase={1}
               zIndexRange={6}
             >
-              {topTrackBags.map((bag, i) => (
+              {topTrackItems.map((item, i) => (
                 <div
-                  key={`top-${bag.src}-${i}`}
-                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                  key={`top-${item.src}-${i}`}
+                  className={cn(
+                    "select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] md:rounded-[1.35rem]",
+                    topUsesSunglasses
+                      ? "h-20 w-36 sm:h-24 sm:w-44 md:h-28 md:w-52"
+                      : "h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36"
+                  )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={bag.src}
+                    src={item.src}
                     alt=""
-                    className="pointer-events-none h-full w-full object-cover"
+                    className={cn(
+                      "pointer-events-none h-full w-full",
+                      topUsesSunglasses ? "object-contain" : "object-cover"
+                    )}
                     draggable={false}
                   />
                 </div>
