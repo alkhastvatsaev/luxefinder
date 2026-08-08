@@ -234,22 +234,6 @@ export default function HomeCoverflow({
           </div>
         )}
 
-        {!hasResult && !showPhoto && !busy && (
-          <p className="animate-rise-delay mb-3 max-w-[340px] px-5 text-center text-[22px] font-semibold leading-tight tracking-[-0.03em] text-foreground sm:max-w-[400px] sm:text-[26px] md:text-[28px]">
-            <GradientShimmer
-              gradient="bay"
-              easing="smooth"
-              duration={5.8}
-              spread={3}
-              pauseBetween={5000}
-              pauseBetweenMax={9000}
-              className="text-inherit font-semibold tracking-inherit"
-            >
-              Envoyez la photo de ce que vous voulez.
-            </GradientShimmer>
-          </p>
-        )}
-
         <div className="relative flex w-screen max-w-[100vw] shrink items-center justify-center">
           {/* Lens CTA — always above bag tracks; no opacity/transform anim on this shell (breaks backdrop-filter) */}
           <div
@@ -329,12 +313,15 @@ export default function HomeCoverflow({
                   </div>
                 ) : (
                   <span
-                    className="group relative z-10 inline-flex touch-manipulation items-center justify-center rounded-full p-3 outline-none transition-transform [@media(hover:hover)_and_(pointer:fine)]:hover:scale-105"
+                    className="group relative z-10 flex h-full w-full touch-manipulation flex-col items-center justify-center gap-2.5 px-5 outline-none"
                     onPointerDown={(e) => e.stopPropagation()}
                     onPointerUp={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <LensUploadIcon className="pointer-events-none size-[3.5rem] md:size-[4.25rem]" />
+                    <LensUploadIcon className="pointer-events-none size-[3.5rem] transition-transform [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-105 md:size-[4.25rem]" />
+                    <span className="pointer-events-none max-w-[10.5rem] text-center text-[12px] font-medium leading-snug tracking-[-0.02em] text-foreground sm:text-[13px]">
+                      Envoyez la photo de ce que vous voulez.
+                    </span>
                     <input
                       ref={fileInputRef}
                       id="luxefinder-upload"
