@@ -148,9 +148,9 @@ export default function HomeCoverflow({ bagSlides }: Props) {
   const showLensHalo = !hasResult && !showPhoto && !busy;
   const showBagMarquee = !hasResult && !showPhoto && !busy;
 
-  /** Fewer bags on the loop = real air between cards (path spacing is width/N). */
+  /** Bag count on the loop controls spacing (width/N). */
   const trackBags = useMemo(() => {
-    const max = 5;
+    const max = 8;
     if (bagSlides.length <= max) return bagSlides;
     return Array.from({ length: max }, (_, i) => {
       const idx = Math.round((i * (bagSlides.length - 1)) / (max - 1));
