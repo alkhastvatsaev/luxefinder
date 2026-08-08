@@ -33,7 +33,8 @@ export async function fetchGoogleShoppingProducts(
 
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.set("engine", "google_shopping");
-  url.searchParams.set("q", `${q} bag`);
+  // Don't append "bag" — it often zeros out Shopping for known models
+  url.searchParams.set("q", q);
   url.searchParams.set("hl", "fr");
   url.searchParams.set("gl", "fr");
   url.searchParams.set("num", "16");

@@ -128,7 +128,6 @@ const QUERY_STOPWORDS = new Set([
   "sac",
   "bag",
   "bags",
-  "tote",
   "handbag",
   "handbags",
   "shoulder",
@@ -233,6 +232,36 @@ export function isStrongModelName(model: string | undefined | null): boolean {
   if (!parts.length) return false;
   // At least one token that isn't a weak filler
   return parts.some((p) => p.length >= 4 && !WEAK_MODEL_TOKENS.has(p));
+}
+
+/**
+ * True if a shopping title is about this model.
+ * Accepts exact phrase, all model tokens, or a known alias (e.g. Timeless ≈ Classic Flap).
+ */
+export function modelMatchesTitle(
+  titleN: string,
+  model: string,
+  brand?: string
+): boolean {
+  const modelN = normalizeText(model);
+  if (!modelN || modelN.length < 3) return false;
+  if (titleN.includes(modelN)) return true;
+
+  const parts = modelN.split(" ").filter((t) => t.length >= 3);
+  if (parts.length >= 1 && parts.every((p) => titleN.includes(p))) return true;
+
+  const brandN = brand ? normalizeText(brand) : "";
+  for (const item of LUXURY_MODELS) {
+    if (normalizeText(item.model) !== modelN) continue;
+    if (brandN && normalizeText(item.brand) !== brandN) continue;
+    for (const a of item.aliases) {
+      const an = normalizeText(a);
+      if (an.length >= 4 && titleN.includes(an)) return true;
+      const ap = an.split(" ").filter((t) => t.length >= 3);
+      if (ap.length >= 2 && ap.every((p) => titleN.includes(p))) return true;
+    }
+  }
+  return false;
 }
 
 /** Prefer a known catalogue model if its name appears in a free title. */

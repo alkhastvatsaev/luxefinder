@@ -152,7 +152,9 @@ export default function OffresWebPage() {
 
           {visible.length === 0 ? (
             <p className="mt-12 text-center text-[14px] text-foreground/45">
-              Aucune offre trouvée pour ce filtre. Essayez une autre région.
+              {offers.length === 0
+                ? "Aucune offre trouvée pour ce modèle pour le moment. Réessayez dans un instant."
+                : "Aucune offre pour ce filtre. Essayez une autre région."}
             </p>
           ) : (
             <ul className="mt-5 flex flex-col gap-2.5">

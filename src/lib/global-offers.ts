@@ -1,7 +1,6 @@
 /**
  * Deep multi-region seller search for a confirmed product.
- * Uses SerpAPI Google Shopping across USA / Europe / Asia / Africa
- * (production equivalent of agent-reach deep web research).
+ * Uses SerpAPI Google Shopping (+ organic fallback) across continents.
  */
 
 import { hasSerpApiKey } from "./google-lens";
@@ -11,6 +10,7 @@ import {
   TRUSTED_DOMAINS,
   significantQueryTokens,
   isStrongModelName,
+  modelMatchesTitle,
 } from "./luxury-kb";
 
 export type OfferRegion = "usa" | "europe" | "asia" | "africa";
@@ -33,20 +33,16 @@ type Market = {
   hl: string;
 };
 
-/** Representative markets per continent — parallel SerpAPI shopping lookups. */
+/** High-yield markets first — fewer parallel calls = fewer empty SerpAPI responses. */
 const MARKETS: Market[] = [
-  { region: "usa", country: "États-Unis", gl: "us", hl: "en" },
   { region: "europe", country: "France", gl: "fr", hl: "fr" },
   { region: "europe", country: "Allemagne", gl: "de", hl: "de" },
   { region: "europe", country: "Royaume-Uni", gl: "gb", hl: "en" },
   { region: "europe", country: "Italie", gl: "it", hl: "it" },
+  { region: "usa", country: "États-Unis", gl: "us", hl: "en" },
   { region: "asia", country: "Japon", gl: "jp", hl: "ja" },
   { region: "asia", country: "Hong Kong", gl: "hk", hl: "en" },
   { region: "asia", country: "Singapour", gl: "sg", hl: "en" },
-  { region: "asia", country: "Corée", gl: "kr", hl: "ko" },
-  { region: "africa", country: "Afrique du Sud", gl: "za", hl: "en" },
-  { region: "africa", country: "Maroc", gl: "ma", hl: "fr" },
-  { region: "africa", country: "Égypte", gl: "eg", hl: "en" },
 ];
 
 function serpKey(): string {
@@ -74,12 +70,8 @@ function classifyKind(host: string): GlobalOffer["kind"] {
   return "shopping";
 }
 
-/** Reject clear category mismatches (bow tie when looking for a bag, etc.). */
 const NON_BAG_NOISE =
-  /\b(bow\s*tie|cravate|noeud\s*papillon|wallet|portefeuille|sneaker|shoe|chaussure|watch|montre|scarf|foulard|belt\s*bag|sac\s*banane|camera\s*bag|ceinture(?!\s*bag))\b/i;
-
-const BAG_HINT =
-  /\b(bag|sac|tote|handbag|shoulder|epaule|ophidia|neverfull|speedy|birkin|kelly|marmont|jackie|dionysus|flap|pouch|jodie)\b/i;
+  /\b(bow\s*tie|cravate|noeud\s*papillon|wallet|portefeuille|sneaker|shoe|chaussure|watch|montre|scarf|foulard)\b/i;
 
 function titleMatchesProduct(
   titleN: string,
@@ -90,30 +82,20 @@ function titleMatchesProduct(
   const modelN = required.model ? normalizeText(required.model) : "";
   const brandParts = brandN.split(" ").filter((t) => t.length >= 3);
   const tokens = significantQueryTokens(query);
-  const queryN = normalizeText(query);
 
-  // Strong model required in title when we have one
   if (isStrongModelName(modelN)) {
-    if (!titleN.includes(modelN)) return false;
+    if (!modelMatchesTitle(titleN, modelN, brandN || undefined)) return false;
   } else if (tokens.length) {
-    // Fall back to distinctive query tokens (all must hit if ≤3, else ≥2)
-    const need = tokens.length <= 3 ? tokens.length : 2;
+    const need = Math.min(2, tokens.length);
     const hits = tokens.filter((t) => titleN.includes(t)).length;
     if (hits < need) return false;
   }
 
   if (brandParts.length && !brandParts.every((p) => titleN.includes(p))) return false;
 
-  // If the search is bag-like, drop accessories / wrong categories
-  if (BAG_HINT.test(queryN) && NON_BAG_NOISE.test(titleN)) {
-    // Allow when the noise word is itself the model line (rare)
-    if (!(isStrongModelName(modelN) && titleN.includes(modelN) && !/bow\s*tie|cravate|wallet|sneaker|watch/i.test(titleN))) {
-      if (/bow\s*tie|cravate|wallet|sneaker|shoe|watch|scarf/i.test(titleN)) return false;
-      // Belt bag / camera bag only if model search wasn't a shoulder bag
-      if (/\b(shoulder|epaule|sac a epaule)\b/i.test(queryN) && /\b(belt\s*bag|camera\s*bag|sac\s*banane)\b/i.test(titleN)) {
-        return false;
-      }
-    }
+  // Drop obvious non-bag accessories when looking for a bag/model
+  if (NON_BAG_NOISE.test(titleN) && (isStrongModelName(modelN) || /\b(bag|sac|tote|handbag)\b/i.test(normalizeText(query)))) {
+    return false;
   }
 
   return true;
@@ -137,7 +119,7 @@ async function shoppingInMarket(
   url.searchParams.set("api_key", key);
 
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 9000);
+  const timer = setTimeout(() => ctrl.abort(), 10000);
   try {
     const res = await fetch(url.toString(), { signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) return [];
@@ -151,7 +133,9 @@ async function shoppingInMarket(
         extracted_price?: number;
         thumbnail?: string;
       }>;
+      error?: string;
     };
+    if (data.error) return [];
 
     const out: GlobalOffer[] = [];
     const seen = new Set<string>();
@@ -165,7 +149,7 @@ async function shoppingInMarket(
       const titleN = normalizeText(title);
       if (!titleMatchesProduct(titleN, query, required)) continue;
 
-      const k = link.split("?")[0].toLowerCase();
+      const k = `${hostOf(link)}|${titleN.slice(0, 60)}`;
       if (seen.has(k)) continue;
       seen.add(k);
 
@@ -177,6 +161,74 @@ async function shoppingInMarket(
         source: (r.source || h || market.country).slice(0, 80),
         price: r.price || (r.extracted_price != null ? String(r.extracted_price) : undefined),
         thumbnail: /^https?:\/\//i.test(thumb) ? thumb : undefined,
+        region: market.region,
+        country: market.country,
+        kind: classifyKind(h),
+      });
+      if (out.length >= limit) break;
+    }
+    return out;
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Organic Google results as fallback when Shopping is thin (same SerpAPI key). */
+async function organicInMarket(
+  query: string,
+  market: Market,
+  limit: number,
+  required: { brand?: string; model?: string }
+): Promise<GlobalOffer[]> {
+  const key = serpKey();
+  if (!key || !hasSerpApiKey()) return [];
+
+  const url = new URL("https://serpapi.com/search.json");
+  url.searchParams.set("engine", "google");
+  url.searchParams.set("q", `${query} (buy OR sac OR bag OR shop OR occasion)`);
+  url.searchParams.set("hl", market.hl);
+  url.searchParams.set("gl", market.gl);
+  url.searchParams.set("num", "15");
+  url.searchParams.set("api_key", key);
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(url.toString(), { signal: ctrl.signal, cache: "no-store" });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      organic_results?: Array<{
+        title?: string;
+        link?: string;
+        source?: string;
+        displayed_link?: string;
+      }>;
+    };
+
+    const out: GlobalOffer[] = [];
+    const seen = new Set<string>();
+    for (const r of data.organic_results || []) {
+      const link = (r.link || "").trim();
+      const title = (r.title || "").trim();
+      if (!link || !title || !/^https?:\/\//i.test(link)) continue;
+      if (REPLICA_PATTERNS.test(title) || REPLICA_PATTERNS.test(link)) continue;
+      // Skip pure Wikipedia / social
+      if (/wikipedia\.|facebook\.|instagram\.|pinterest\.|youtube\./i.test(link)) continue;
+
+      const titleN = normalizeText(title);
+      if (!titleMatchesProduct(titleN, query, required)) continue;
+
+      const h = hostOf(link);
+      const k = `${h}|${titleN.slice(0, 60)}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+
+      out.push({
+        title: title.slice(0, 180),
+        link,
+        source: (r.source || h || market.country).slice(0, 80),
         region: market.region,
         country: market.country,
         kind: classifyKind(h),
@@ -214,7 +266,7 @@ export type GlobalOffersResult = {
   markets_total: number;
 };
 
-/** Parallel deep shopping search across 4 continents. */
+/** Parallel deep shopping search across continents + organic fallback. */
 export async function searchGlobalOffers(
   productQuery: string,
   opts?: {
@@ -225,14 +277,13 @@ export async function searchGlobalOffers(
   }
 ): Promise<GlobalOffersResult> {
   const q = productQuery.trim().slice(0, 160);
-  const perMarket = opts?.perMarket ?? 8;
-  const maxOffers = opts?.maxOffers ?? 60;
+  const perMarket = opts?.perMarket ?? 10;
+  const maxOffers = opts?.maxOffers ?? 80;
   const required = {
     brand: opts?.brand?.trim() || undefined,
     model: opts?.model?.trim() || undefined,
   };
 
-  // Prefer "Brand Model" query when both are known — cleaner shopping hits
   const shoppingQuery =
     required.brand && required.model
       ? `${required.brand} ${required.model}`.slice(0, 160)
@@ -248,16 +299,33 @@ export async function searchGlobalOffers(
     };
   }
 
-  const settled = await Promise.allSettled(
+  // Wave 1: shopping all markets
+  const shoppingSettled = await Promise.allSettled(
     MARKETS.map((m) => shoppingInMarket(shoppingQuery, m, perMarket, required))
   );
 
   let marketsOk = 0;
   const merged: GlobalOffer[] = [];
-  for (const s of settled) {
+  for (const s of shoppingSettled) {
     if (s.status === "fulfilled") {
       if (s.value.length) marketsOk += 1;
       merged.push(...s.value);
+    }
+  }
+
+  // Wave 2: organic fallback on top markets if thin
+  if (merged.length < 8) {
+    const organicMarkets = MARKETS.filter((m) =>
+      ["fr", "us", "gb", "de"].includes(m.gl)
+    );
+    const organicSettled = await Promise.allSettled(
+      organicMarkets.map((m) => organicInMarket(shoppingQuery, m, 8, required))
+    );
+    for (const s of organicSettled) {
+      if (s.status === "fulfilled" && s.value.length) {
+        marketsOk += 1;
+        merged.push(...s.value);
+      }
     }
   }
 
@@ -282,7 +350,7 @@ export async function searchGlobalOffers(
     query: shoppingQuery,
     offers,
     by_region,
-    markets_ok: marketsOk,
+    markets_ok: Math.min(marketsOk, MARKETS.length),
     markets_total: MARKETS.length,
   };
 }
