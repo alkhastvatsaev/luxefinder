@@ -196,7 +196,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         <ProductSearchBar onSearch={onTextSearch} disabled={busy} />
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(1rem,env(safe-area-inset-bottom))] pointer-events-none">
+      <div className="relative z-30 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(1rem,env(safe-area-inset-bottom))] pointer-events-none">
         {result && (
           <div className="mb-2 w-full shrink-0 animate-rise pointer-events-auto">
             <SearchResultsIdentity ai={result.ai_description} />
@@ -204,9 +204,9 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         )}
 
         <div className="animate-rise-delay relative flex w-screen max-w-[100vw] shrink items-center justify-center">
-          {/* Lens CTA — centered */}
+          {/* Lens CTA — always above bag tracks */}
           <div
-            className="relative z-20 pointer-events-auto"
+            className="relative z-30 pointer-events-auto"
             style={{ width: lensSize, height: lensSize }}
           >
             <div className="relative h-full w-full">
@@ -313,7 +313,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
           </div>
         </div>
 
-        <div className="relative z-10 mt-3 flex w-full shrink-0 flex-col items-center gap-2.5 px-5 pointer-events-auto">
+        <div className="relative z-30 mt-3 flex w-full shrink-0 flex-col items-center gap-2.5 px-5 pointer-events-auto">
           {!hasResult && !showPhoto && !busy && (
             <p className="animate-rise-delay max-w-[280px] text-center text-[15px] font-semibold leading-snug tracking-[-0.02em] text-foreground sm:text-[16px]">
               Vous savez ce que vous voulez.
@@ -363,121 +363,118 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         </div>
       </div>
 
-      {/* Top bag track — behind Lens, same direction as bottom */}
-      {showBagMarquee && topTrackBags.length > 0 && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[28%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.45] sm:h-32 md:h-36"
-        >
-          <MarqueeAlongSvgPath
-            path={BAG_PATH}
-            viewBox="0 0 1600 100"
-            baseVelocity={5.5}
-            direction="normal"
-            draggable={false}
-            repeat={1}
-            fadeEnds={8}
-            keepUpright
-            className="h-full w-full"
-            enableRollingZIndex
-            zIndexBase={1}
-            zIndexRange={6}
-          >
-            {topTrackBags.map((bag, i) => (
-              <div
-                key={`top-${bag.src}-${i}`}
-                className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={bag.src}
-                  alt=""
-                  className="pointer-events-none h-full w-full object-cover"
-                  draggable={false}
-                />
-              </div>
-            ))}
-          </MarqueeAlongSvgPath>
-        </div>
-      )}
-
-      {/* Mid bag track — behind Lens, opposite direction */}
-      {showBagMarquee && midTrackBags.length > 0 && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[52%] z-0 h-28 w-full -translate-y-1/2 overflow-visible opacity-[0.55] sm:h-32 md:h-36"
-        >
-          <MarqueeAlongSvgPath
-            path={BAG_PATH}
-            viewBox="0 0 1600 100"
-            baseVelocity={5}
-            direction="reverse"
-            draggable={false}
-            repeat={1}
-            fadeEnds={8}
-            keepUpright
-            className="h-full w-full"
-            enableRollingZIndex
-            zIndexBase={1}
-            zIndexRange={6}
-          >
-            {midTrackBags.map((bag, i) => (
-              <div
-                key={`mid-${bag.src}-${i}`}
-                className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={bag.src}
-                  alt=""
-                  className="pointer-events-none h-full w-full object-cover"
-                  draggable={false}
-                />
-              </div>
-            ))}
-          </MarqueeAlongSvgPath>
-        </div>
-      )}
-
-      {/* Bottom bag track — same vertical rhythm (≈ +24% from mid), interactive */}
+      {/* Three bag tracks — even vertical rhythm below the header; Lens/copy stay above (z-30) */}
       {showBagMarquee && trackBags.length > 0 && (
-        <div
-          className="absolute inset-x-0 top-[76%] z-20 h-36 w-full -translate-y-1/2 overflow-visible sm:h-40 md:h-44"
-        >
-          <MarqueeAlongSvgPath
-            path={BAG_PATH}
-            viewBox="0 0 1600 100"
-            baseVelocity={6}
-            slowdownOnHover
-            slowDownFactor={0.25}
-            draggable
-            grabCursor
-            dragSensitivity={0.18}
-            dragVelocityDecay={0.94}
-            dragAwareDirection
-            repeat={1}
-            fadeEnds={8}
-            keepUpright
-            className="h-full w-full cursor-grab"
-            enableRollingZIndex
-            zIndexBase={1}
-            zIndexRange={8}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 top-[7.25rem] z-0 flex flex-col justify-evenly sm:top-[7.75rem]">
+          {/* Top — same direction as bottom */}
+          <div
+            aria-hidden
+            className="relative h-28 w-full shrink-0 overflow-visible opacity-50 sm:h-32 md:h-36"
           >
-            {trackBags.map((bag, i) => (
-              <div
-                key={`${bag.src}-${i}`}
-                className="h-32 w-32 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-36 sm:w-36 md:h-40 md:w-40 md:rounded-[1.35rem]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={bag.src}
-                  alt=""
-                  className="pointer-events-none h-full w-full object-cover"
-                  draggable={false}
-                />
-              </div>
-            ))}
-          </MarqueeAlongSvgPath>
+            <MarqueeAlongSvgPath
+              path={BAG_PATH}
+              viewBox="0 0 1600 100"
+              baseVelocity={5.5}
+              direction="normal"
+              draggable={false}
+              repeat={1}
+              fadeEnds={8}
+              keepUpright
+              className="h-full w-full"
+              enableRollingZIndex
+              zIndexBase={1}
+              zIndexRange={6}
+            >
+              {topTrackBags.map((bag, i) => (
+                <div
+                  key={`top-${bag.src}-${i}`}
+                  className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={bag.src}
+                    alt=""
+                    className="pointer-events-none h-full w-full object-cover"
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </MarqueeAlongSvgPath>
+          </div>
+
+          {/* Mid — reverse, behind Lens */}
+          <div
+            aria-hidden
+            className="relative h-28 w-full shrink-0 overflow-visible opacity-55 sm:h-32 md:h-36"
+          >
+            <MarqueeAlongSvgPath
+              path={BAG_PATH}
+              viewBox="0 0 1600 100"
+              baseVelocity={5}
+              direction="reverse"
+              draggable={false}
+              repeat={1}
+              fadeEnds={8}
+              keepUpright
+              className="h-full w-full"
+              enableRollingZIndex
+              zIndexBase={1}
+              zIndexRange={6}
+            >
+              {midTrackBags.map((bag, i) => (
+                <div
+                  key={`mid-${bag.src}-${i}`}
+                  className="h-24 w-24 select-none overflow-hidden rounded-[1.15rem] shadow-soft ring-1 ring-black/[0.04] sm:h-28 sm:w-28 md:h-32 md:w-32 md:rounded-[1.25rem]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={bag.src}
+                    alt=""
+                    className="pointer-events-none h-full w-full object-cover"
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </MarqueeAlongSvgPath>
+          </div>
+
+          {/* Bottom — interactive, in front of tracks but under Lens */}
+          <div className="relative z-10 h-32 w-full shrink-0 overflow-visible pointer-events-auto sm:h-36 md:h-40">
+            <MarqueeAlongSvgPath
+              path={BAG_PATH}
+              viewBox="0 0 1600 100"
+              baseVelocity={6}
+              slowdownOnHover
+              slowDownFactor={0.25}
+              draggable
+              grabCursor
+              dragSensitivity={0.18}
+              dragVelocityDecay={0.94}
+              dragAwareDirection
+              repeat={1}
+              fadeEnds={8}
+              keepUpright
+              className="h-full w-full cursor-grab"
+              enableRollingZIndex
+              zIndexBase={1}
+              zIndexRange={8}
+            >
+              {trackBags.map((bag, i) => (
+                <div
+                  key={`${bag.src}-${i}`}
+                  className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={bag.src}
+                    alt=""
+                    className="pointer-events-none h-full w-full object-cover"
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </MarqueeAlongSvgPath>
+          </div>
         </div>
       )}
     </main>
