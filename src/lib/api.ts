@@ -142,6 +142,7 @@ export const luxefinderApi = {
       by_region: Record<"usa" | "europe" | "asia" | "africa", number>;
       markets_ok: number;
       markets_total: number;
+      cached?: boolean;
     }>(`/r/${token}/offers`, { method: "POST" }),
   client: (token: string) => api<Record<string, unknown>>(`/r/${token}`),
   supplier: (token: string) => api<Record<string, unknown>>(`/s/${token}`),

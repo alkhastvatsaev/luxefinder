@@ -41,6 +41,7 @@ export default function OffresWebPage() {
   });
   const [marketsOk, setMarketsOk] = useState(0);
   const [marketsTotal, setMarketsTotal] = useState(0);
+  const [cached, setCached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<RegionFilter>("all");
@@ -55,6 +56,7 @@ export default function OffresWebPage() {
       setByRegion(res.by_region || { usa: 0, europe: 0, asia: 0, africa: 0 });
       setMarketsOk(res.markets_ok || 0);
       setMarketsTotal(res.markets_total || 0);
+      setCached(Boolean((res as { cached?: boolean }).cached));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -129,6 +131,7 @@ export default function OffresWebPage() {
           <p className="mt-3 text-[12px] text-foreground/40">
             {offers.length} offre{offers.length === 1 ? "" : "s"} · {marketsOk}/{marketsTotal}{" "}
             marchés
+            {cached ? " · cache" : ""}
           </p>
 
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

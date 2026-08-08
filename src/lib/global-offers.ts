@@ -1,8 +1,12 @@
 /**
- * Deep multi-region seller search for a confirmed product.
- * Uses SerpAPI Google Shopping (+ organic fallback) across continents.
+ * Seller search via SerpAPI — credit-disciplined.
+ *
+ * Cold search: ≤4 Shopping markets (+ 1 organic only if empty).
+ * Warm search: Blob cache 7 days → 0 SerpAPI credits.
  */
 
+import { createHash } from "crypto";
+import { list, put } from "@vercel/blob";
 import { hasSerpApiKey } from "./google-lens";
 import {
   normalizeText,
@@ -33,17 +37,15 @@ type Market = {
   hl: string;
 };
 
-/** High-yield markets first — fewer parallel calls = fewer empty SerpAPI responses. */
+/** 4 core markets = max 4 SerpAPI credits per cold search. */
 const MARKETS: Market[] = [
   { region: "europe", country: "France", gl: "fr", hl: "fr" },
   { region: "europe", country: "Allemagne", gl: "de", hl: "de" },
   { region: "europe", country: "Royaume-Uni", gl: "gb", hl: "en" },
-  { region: "europe", country: "Italie", gl: "it", hl: "it" },
   { region: "usa", country: "États-Unis", gl: "us", hl: "en" },
-  { region: "asia", country: "Japon", gl: "jp", hl: "ja" },
-  { region: "asia", country: "Hong Kong", gl: "hk", hl: "en" },
-  { region: "asia", country: "Singapour", gl: "sg", hl: "en" },
 ];
+
+const OFFERS_CACHE_TTL_MS = 7 * 24 * 3600 * 1000;
 
 function serpKey(): string {
   return (process.env.SERPAPI_KEY || process.env.SERP_API_KEY || "").trim();
@@ -93,12 +95,70 @@ function titleMatchesProduct(
 
   if (brandParts.length && !brandParts.every((p) => titleN.includes(p))) return false;
 
-  // Drop obvious non-bag accessories when looking for a bag/model
-  if (NON_BAG_NOISE.test(titleN) && (isStrongModelName(modelN) || /\b(bag|sac|tote|handbag)\b/i.test(normalizeText(query)))) {
+  if (
+    NON_BAG_NOISE.test(titleN) &&
+    (isStrongModelName(modelN) || /\b(bag|sac|tote|handbag)\b/i.test(normalizeText(query)))
+  ) {
     return false;
   }
 
   return true;
+}
+
+function offersCacheKey(query: string, brand?: string, model?: string): string {
+  const raw = normalizeText([brand, model, query].filter(Boolean).join("|"));
+  const hash = createHash("sha256").update(raw).digest("hex").slice(0, 32);
+  return `cache/offers/${hash}.json`;
+}
+
+export type GlobalOffersResult = {
+  query: string;
+  offers: GlobalOffer[];
+  by_region: Record<OfferRegion, number>;
+  markets_ok: number;
+  markets_total: number;
+  cached?: boolean;
+};
+
+async function readOffersCache(pathname: string): Promise<GlobalOffersResult | null> {
+  try {
+    const { blobs } = await list({ prefix: pathname, limit: 1 });
+    const hit = blobs.find((b) => b.pathname === pathname);
+    if (!hit) return null;
+    const res = await fetch(hit.url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      _cached_at?: number;
+      result?: GlobalOffersResult;
+    };
+    const ts = Number(data._cached_at || 0);
+    if (!ts || Date.now() - ts > OFFERS_CACHE_TTL_MS) return null;
+    if (!data.result?.offers?.length) return null;
+    return { ...data.result, cached: true };
+  } catch {
+    return null;
+  }
+}
+
+async function writeOffersCache(pathname: string, result: GlobalOffersResult): Promise<void> {
+  try {
+    const payload = {
+      query: result.query,
+      offers: result.offers,
+      by_region: result.by_region,
+      markets_ok: result.markets_ok,
+      markets_total: result.markets_total,
+      cached: false,
+    };
+    await put(pathname, JSON.stringify({ _cached_at: Date.now(), result: payload }), {
+      access: "public",
+      contentType: "application/json",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+  } catch (e) {
+    console.error("offers cache write failed", pathname, e);
+  }
 }
 
 async function shoppingInMarket(
@@ -175,22 +235,20 @@ async function shoppingInMarket(
   }
 }
 
-/** Organic Google results as fallback when Shopping is thin (same SerpAPI key). */
-async function organicInMarket(
+async function organicFallback(
   query: string,
-  market: Market,
-  limit: number,
   required: { brand?: string; model?: string }
 ): Promise<GlobalOffer[]> {
   const key = serpKey();
   if (!key || !hasSerpApiKey()) return [];
+  const market = MARKETS[0];
 
   const url = new URL("https://serpapi.com/search.json");
   url.searchParams.set("engine", "google");
   url.searchParams.set("q", `${query} (buy OR sac OR bag OR shop OR occasion)`);
   url.searchParams.set("hl", market.hl);
   url.searchParams.set("gl", market.gl);
-  url.searchParams.set("num", "15");
+  url.searchParams.set("num", "12");
   url.searchParams.set("api_key", key);
 
   const ctrl = new AbortController();
@@ -199,12 +257,7 @@ async function organicInMarket(
     const res = await fetch(url.toString(), { signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) return [];
     const data = (await res.json()) as {
-      organic_results?: Array<{
-        title?: string;
-        link?: string;
-        source?: string;
-        displayed_link?: string;
-      }>;
+      organic_results?: Array<{ title?: string; link?: string; source?: string }>;
     };
 
     const out: GlobalOffer[] = [];
@@ -214,7 +267,6 @@ async function organicInMarket(
       const title = (r.title || "").trim();
       if (!link || !title || !/^https?:\/\//i.test(link)) continue;
       if (REPLICA_PATTERNS.test(title) || REPLICA_PATTERNS.test(link)) continue;
-      // Skip pure Wikipedia / social
       if (/wikipedia\.|facebook\.|instagram\.|pinterest\.|youtube\./i.test(link)) continue;
 
       const titleN = normalizeText(title);
@@ -233,7 +285,7 @@ async function organicInMarket(
         country: market.country,
         kind: classifyKind(h),
       });
-      if (out.length >= limit) break;
+      if (out.length >= 10) break;
     }
     return out;
   } catch {
@@ -258,15 +310,7 @@ function dedupeOffers(offers: GlobalOffer[]): GlobalOffer[] {
   return Array.from(byKey.values());
 }
 
-export type GlobalOffersResult = {
-  query: string;
-  offers: GlobalOffer[];
-  by_region: Record<OfferRegion, number>;
-  markets_ok: number;
-  markets_total: number;
-};
-
-/** Parallel deep shopping search across continents + organic fallback. */
+/** ≤4 credits cold, 0 on cache hit (7 days). */
 export async function searchGlobalOffers(
   productQuery: string,
   opts?: {
@@ -274,11 +318,12 @@ export async function searchGlobalOffers(
     maxOffers?: number;
     brand?: string;
     model?: string;
+    skipCache?: boolean;
   }
 ): Promise<GlobalOffersResult> {
   const q = productQuery.trim().slice(0, 160);
-  const perMarket = opts?.perMarket ?? 10;
-  const maxOffers = opts?.maxOffers ?? 80;
+  const perMarket = opts?.perMarket ?? 12;
+  const maxOffers = opts?.maxOffers ?? 60;
   const required = {
     brand: opts?.brand?.trim() || undefined,
     model: opts?.model?.trim() || undefined,
@@ -289,17 +334,26 @@ export async function searchGlobalOffers(
       ? `${required.brand} ${required.model}`.slice(0, 160)
       : q;
 
-  if (!shoppingQuery || !serpKey() || !hasSerpApiKey()) {
-    return {
-      query: shoppingQuery,
-      offers: [],
-      by_region: { usa: 0, europe: 0, asia: 0, africa: 0 },
-      markets_ok: 0,
-      markets_total: MARKETS.length,
-    };
+  const empty = (): GlobalOffersResult => ({
+    query: shoppingQuery,
+    offers: [],
+    by_region: { usa: 0, europe: 0, asia: 0, africa: 0 },
+    markets_ok: 0,
+    markets_total: MARKETS.length,
+    cached: false,
+  });
+
+  if (!shoppingQuery || !serpKey() || !hasSerpApiKey()) return empty();
+
+  const cachePath = offersCacheKey(shoppingQuery, required.brand, required.model);
+  if (!opts?.skipCache) {
+    const hit = await readOffersCache(cachePath);
+    if (hit) {
+      console.log("[offers] cache HIT", shoppingQuery);
+      return hit;
+    }
   }
 
-  // Wave 1: shopping all markets
   const shoppingSettled = await Promise.allSettled(
     MARKETS.map((m) => shoppingInMarket(shoppingQuery, m, perMarket, required))
   );
@@ -313,19 +367,11 @@ export async function searchGlobalOffers(
     }
   }
 
-  // Wave 2: organic fallback on top markets if thin
-  if (merged.length < 8) {
-    const organicMarkets = MARKETS.filter((m) =>
-      ["fr", "us", "gb", "de"].includes(m.gl)
-    );
-    const organicSettled = await Promise.allSettled(
-      organicMarkets.map((m) => organicInMarket(shoppingQuery, m, 8, required))
-    );
-    for (const s of organicSettled) {
-      if (s.status === "fulfilled" && s.value.length) {
-        marketsOk += 1;
-        merged.push(...s.value);
-      }
+  if (merged.length < 4) {
+    const organic = await organicFallback(shoppingQuery, required);
+    if (organic.length) {
+      marketsOk += 1;
+      merged.push(...organic);
     }
   }
 
@@ -346,11 +392,19 @@ export async function searchGlobalOffers(
     return regionOrder.indexOf(a.region) - regionOrder.indexOf(b.region);
   });
 
-  return {
+  const result: GlobalOffersResult = {
     query: shoppingQuery,
     offers,
     by_region,
     markets_ok: Math.min(marketsOk, MARKETS.length),
     markets_total: MARKETS.length,
+    cached: false,
   };
+
+  if (offers.length > 0) {
+    void writeOffersCache(cachePath, result);
+    console.log("[offers] cache MISS → stored", shoppingQuery, offers.length);
+  }
+
+  return result;
 }

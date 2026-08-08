@@ -582,8 +582,8 @@ export async function handleWebOffers(clientToken: string) {
 
   const id = resolveOfferIdentity(req);
   const result = await searchGlobalOffers(id.query, {
-    perMarket: 10,
-    maxOffers: 72,
+    perMarket: 12,
+    maxOffers: 60,
     brand: id.brand,
     model: id.model,
   });
