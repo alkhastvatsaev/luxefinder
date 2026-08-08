@@ -105,6 +105,7 @@ export const luxefinderApi = {
     client_budget_currency?: string;
     contact_email?: string;
     contact_telegram?: string;
+    start_blast?: boolean;
   }) =>
     api<{
       ok: boolean;
@@ -116,8 +117,32 @@ export const luxefinderApi = {
     }>("/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...body, start_blast: true }),
+      body: JSON.stringify({ start_blast: false, ...body }),
     }),
+  webOffers: (token: string) =>
+    api<{
+      ok: boolean;
+      request_id: number;
+      client_token: string;
+      product: string;
+      photo_url: string;
+      client_budget?: number | null;
+      client_budget_currency?: string | null;
+      query: string;
+      offers: Array<{
+        title: string;
+        link: string;
+        source: string;
+        price?: string;
+        thumbnail?: string;
+        region: "usa" | "europe" | "asia" | "africa";
+        country: string;
+        kind: "official" | "resale" | "shopping" | "other";
+      }>;
+      by_region: Record<"usa" | "europe" | "asia" | "africa", number>;
+      markets_ok: number;
+      markets_total: number;
+    }>(`/r/${token}/offers`, { method: "POST" }),
   client: (token: string) => api<Record<string, unknown>>(`/r/${token}`),
   supplier: (token: string) => api<Record<string, unknown>>(`/s/${token}`),
   quote: (

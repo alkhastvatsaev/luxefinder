@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/confirm/", "/s/", "/r/"],
+        disallow: ["/api/", "/confirm/", "/s/", "/r/", "/offres/"],
       },
     ],
     sitemap: "https://luxefinder.app/sitemap.xml",

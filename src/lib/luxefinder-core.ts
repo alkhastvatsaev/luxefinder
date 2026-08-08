@@ -20,6 +20,7 @@ import { resolveLuxuryProduct, type VisionSignals } from "./luxury-resolve";
 import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product";
 import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
 import { fetchGoogleShoppingProducts, fetchProductThumbnail } from "./google-text-search";
+import { searchGlobalOffers } from "./global-offers";
 import { suggestLuxuryModels } from "./luxury-kb";
 import { getCachedAnalyzeSmart, setCachedAnalyzeSmart, contentFingerprint, getCachedLens, setCachedLens } from "./analyze-cache";
 import { makeRoiCrops } from "./image-crops";
@@ -418,26 +419,53 @@ export async function handleConfirm(body: {
     row.contact_telegram = body.contact_telegram.trim().replace(/^@/, "").slice(0, 128);
   }
 
-  row.outreaches = makeSupplierSlots(10);
-  row.status = "blasted";
-  row.blast_error =
-    "WhatsApp blast tourne en local (WAREACH). Les liens vendeurs sont prêts — partagez-les ou connectez le worker WA.";
-  for (const o of row.outreaches) o.wa_status = "link_ready";
-  await saveRfq(row);
-
   const base = (
     process.env.LUXEFINDER_PUBLIC_URL ||
     "https://luxefinder.app"
   ).replace(/\/$/, "");
+
+  if (body.start_blast) {
+    row.outreaches = makeSupplierSlots(10);
+    row.status = "blasted";
+    row.blast_error =
+      "WhatsApp blast tourne en local (WAREACH). Les liens vendeurs sont prêts — partagez-les ou connectez le worker WA.";
+    for (const o of row.outreaches) o.wa_status = "link_ready";
+  } else {
+    row.status = "confirmed";
+    row.blast_error = null;
+  }
+
+  await saveRfq(row);
+
   return {
     ok: true,
     request_id: row.id,
     client_token: row.client_token,
     status: row.status,
     blast_error: row.blast_error,
-    client_url: `${base}/r/${row.client_token}`,
+    client_url: `${base}/offres/${row.client_token}`,
     outreach_queued: row.outreaches.length,
     supplier_urls: row.outreaches.map((o) => `${base}/s/${o.supplier_token}`),
+  };
+}
+
+/** Deep web seller search for a client RFQ (part 2 — choix 1). */
+export async function handleWebOffers(clientToken: string) {
+  const req = await getRfqByClientToken(clientToken);
+  if (!req) throw Object.assign(new Error("request not found"), { status: 404 });
+
+  const query = productLine(req);
+  const result = await searchGlobalOffers(query, { perMarket: 8, maxOffers: 72 });
+
+  return {
+    ok: true,
+    request_id: req.id,
+    client_token: req.client_token,
+    product: query,
+    photo_url: req.photo_url,
+    client_budget: req.client_budget,
+    client_budget_currency: req.client_budget_currency,
+    ...result,
   };
 }
 

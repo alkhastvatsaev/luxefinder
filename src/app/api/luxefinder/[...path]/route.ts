@@ -6,6 +6,7 @@ import {
   handleConfirm,
   handleSuggest,
   handleTextSearch,
+  handleWebOffers,
   selectQuote,
   submitQuote,
   supplierView,
@@ -68,6 +69,11 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ path: stri
     if (path.length === 1 && path[0] === "confirm") {
       const body = await req.json();
       const out = await handleConfirm(body);
+      return NextResponse.json(out);
+    }
+
+    if (path[0] === "r" && path[1] && path[2] === "offers" && path.length === 3) {
+      const out = await handleWebOffers(path[1]);
       return NextResponse.json(out);
     }
 

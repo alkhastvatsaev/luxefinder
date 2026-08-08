@@ -97,8 +97,9 @@ export function SearchResultsActions({
         user_edit: title,
         client_budget: amount,
         client_budget_currency: amount != null ? "EUR" : undefined,
+        start_blast: false,
       });
-      router.push(`/r/${clientToken}`);
+      router.push(`/offres/${clientToken}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
       setBusy(false);
