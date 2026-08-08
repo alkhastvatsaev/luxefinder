@@ -231,8 +231,12 @@ export default function HomeCoverflow({ bagSlides }: Props) {
                   onFile(e.dataTransfer.files?.[0] || null);
                 }}
                 className={cn(
-                  "group relative z-10 flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[1.75rem] shadow-soft transition",
-                  dragging ? "bg-black/[0.03]" : "bg-gradient-to-b from-neutral-50 to-white",
+                  "group relative z-10 flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[1.75rem] shadow-soft ring-1 ring-black/[0.06] transition",
+                  showPhoto
+                    ? "bg-white"
+                    : dragging
+                      ? "bg-white/40 backdrop-blur-md"
+                      : "bg-white/45 backdrop-blur-md",
                   busy && "pointer-events-none"
                 )}
               >
