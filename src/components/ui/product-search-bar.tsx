@@ -10,7 +10,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { suggestLuxuryModels } from "@/lib/luxury-kb";
+import { luxefinderApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 export type SearchSuggestion = {
@@ -26,8 +26,8 @@ type Props = {
 };
 
 /**
- * Search under the wordmark — suggestions are concrete luxury models only.
- * Selecting one (or Enter on a highlighted row) runs the search.
+ * Search under the wordmark — suggestions from seed KB + living catalogue.
+ * Enter with free text is allowed: the server resolves via Shopping if unknown.
  */
 export function ProductSearchBar({ onSearch, disabled, className }: Props) {
   const listId = useId();
@@ -36,15 +36,35 @@ export function ProductSearchBar({ onSearch, disabled, className }: Props) {
   const [value, setValue] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
 
-  const suggestions: SearchSuggestion[] =
-    value.trim().length >= 2
-      ? suggestLuxuryModels(value, 8).map((s) => ({
-          label: s.label,
-          brand: s.brand,
-          model: s.model,
-        }))
-      : [];
+  useEffect(() => {
+    const q = value.trim();
+    if (q.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      try {
+        const res = await luxefinderApi.suggest(q);
+        if (cancelled) return;
+        setSuggestions(
+          (res.suggestions || []).map((s) => ({
+            label: s.label,
+            brand: String(s.brand || ""),
+            model: String(s.model || ""),
+          }))
+        );
+      } catch {
+        if (!cancelled) setSuggestions([]);
+      }
+    }, 180);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [value]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -69,14 +89,31 @@ export function ProductSearchBar({ onSearch, disabled, className }: Props) {
     [disabled, onSearch]
   );
 
+  const commitFree = useCallback(
+    (raw: string) => {
+      if (disabled) return;
+      const q = raw.trim();
+      if (q.length < 2) return;
+      setOpen(false);
+      setActive(-1);
+      setValue(q);
+      onSearch(q);
+      inputRef.current?.blur();
+    },
+    [disabled, onSearch]
+  );
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (active >= 0 && suggestions[active]) {
       commit(suggestions[active]);
       return;
     }
-    // Only accept a concrete catalogue hit — never free-form random text
-    if (suggestions[0]) commit(suggestions[0]);
+    if (suggestions[0]) {
+      commit(suggestions[0]);
+      return;
+    }
+    commitFree(value);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -115,7 +152,7 @@ export function ProductSearchBar({ onSearch, disabled, className }: Props) {
           spellCheck={false}
           disabled={disabled}
           value={value}
-          placeholder="Rechercher un modèle"
+          placeholder="Marque + modèle"
           aria-label="Rechercher un modèle"
           aria-autocomplete="list"
           aria-controls={listId}
@@ -139,7 +176,7 @@ export function ProductSearchBar({ onSearch, disabled, className }: Props) {
           className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 overflow-hidden rounded-2xl bg-white py-1.5 shadow-soft ring-1 ring-black/[0.06]"
         >
           {suggestions.map((s, i) => (
-            <li key={s.label} role="option" aria-selected={i === active}>
+            <li key={`${s.brand}-${s.model}-${s.label}`} role="option" aria-selected={i === active}>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}

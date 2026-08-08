@@ -194,15 +194,20 @@ export type LuxurySuggestion = {
 };
 
 /** Fuzzy typeahead over the luxury KB (safe for client + server). */
-export function suggestLuxuryModels(query: string, limit = 8): LuxurySuggestion[] {
+export function suggestLuxuryModels(
+  query: string,
+  limit = 8,
+  extra: LuxuryModel[] = []
+): LuxurySuggestion[] {
   const q = normalizeText(query);
   if (q.length < 2) return [];
 
   const tokens = significantQueryTokens(query);
   if (!tokens.length && q.length < 3) return [];
   const scored: LuxurySuggestion[] = [];
+  const pool = extra.length ? [...LUXURY_MODELS, ...extra] : LUXURY_MODELS;
 
-  for (const item of LUXURY_MODELS) {
+  for (const item of pool) {
     const brandN = normalizeText(item.brand);
     const modelN = normalizeText(item.model);
     const aliasesN = item.aliases.map(normalizeText);

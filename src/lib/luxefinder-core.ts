@@ -21,7 +21,12 @@ import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product"
 import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
 import { fetchGoogleShoppingProducts, fetchProductThumbnail } from "./google-text-search";
 import { searchGlobalOffers } from "./global-offers";
-import { suggestLuxuryModels } from "./luxury-kb";
+import { significantQueryTokens, normalizeText } from "./luxury-kb";
+import {
+  suggestAllModels,
+  upsertCatalogProduct,
+  matchCatalogProduct,
+} from "./product-catalog";
 import { getCachedAnalyzeSmart, setCachedAnalyzeSmart, contentFingerprint, getCachedLens, setCachedLens } from "./analyze-cache";
 import { makeRoiCrops } from "./image-crops";
 import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
@@ -33,6 +38,26 @@ function productLine(rfq: Rfq): string {
   const line = parts.filter((p) => p && String(p) !== "inconnue").join(" ");
   if (line) return line.slice(0, 180);
   return String(ai.summary || "article demandé").slice(0, 180);
+}
+
+/** Persist a confident identity into the living catalogue (fire-and-forget safe). */
+async function rememberProduct(ai: Record<string, unknown>, thumbnail?: string) {
+  const brand = String(ai.brand || "").trim();
+  const model = String(ai.model || "").trim();
+  const confidence = Number(ai.confidence || 0);
+  if (confidence > 0 && confidence < 0.65) return;
+  await upsertCatalogProduct({
+    brand,
+    model,
+    aliases: [
+      typeof ai.lens_title === "string" ? ai.lens_title : null,
+      typeof ai.product_name === "string" ? ai.product_name : null,
+      typeof ai.best_guess === "string" ? ai.best_guess : null,
+    ],
+    thumbnail:
+      thumbnail ||
+      (typeof ai.product_image === "string" ? ai.product_image : undefined),
+  });
 }
 
 async function openaiVisionFallback(
@@ -289,6 +314,7 @@ export async function handleAnalyze(file: File) {
     const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
     const row = createDraft(photoUrl, { ...cached, cached: true, cache_via: hit!.via });
     await saveRfq(row);
+    void rememberProduct(cached as Record<string, unknown>, photoUrl).catch(() => {});
     return {
       ok: true,
       request_id: row.id,
@@ -310,6 +336,7 @@ export async function handleAnalyze(file: File) {
   console.log("[analyze] full cache MISS → stored");
   const row = createDraft(photoUrl, ai);
   await saveRfq(row);
+  void rememberProduct(ai, photoUrl).catch(() => {});
   return {
     ok: true,
     request_id: row.id,
@@ -320,70 +347,135 @@ export async function handleAnalyze(file: File) {
   };
 }
 
-/** Typeahead: concrete luxury models from the KB only (no random Google queries). */
+/** Typeahead: seed KB + living catalogue (no Google on every keystroke). */
 export async function handleSuggest(query: string) {
   const q = String(query || "").trim().slice(0, 120);
   if (q.length < 2) return { ok: true, query: q, suggestions: [] as Array<Record<string, unknown>> };
 
-  const kb = suggestLuxuryModels(q, 8);
+  const hits = await suggestAllModels(q, 8);
   return {
     ok: true,
     query: q,
-    suggestions: kb.map((s) => ({
+    suggestions: hits.map((s) => ({
       label: s.label,
       brand: s.brand,
       model: s.model,
-      source: "kb",
+      source: "catalog",
     })),
   };
 }
 
-/** Text path: only concrete KB articles; show product image in the center card. */
+/**
+ * Text path: catalogue hit when possible, otherwise live Shopping resolve.
+ * Any successful identity is written into the living catalogue.
+ */
 export async function handleTextSearch(query: string) {
   const q = String(query || "").trim().slice(0, 200);
   if (q.length < 2) {
     throw Object.assign(new Error("Requête trop courte"), { status: 400 });
   }
 
-  const kb = suggestLuxuryModels(q, 8);
-  const top = kb[0];
-  if (!top || top.score < 40) {
-    throw Object.assign(
-      new Error("Choisissez un modèle dans les suggestions"),
-      { status: 400 }
-    );
+  const suggestions = await suggestAllModels(q, 8);
+  const top = suggestions[0];
+  const catalogHit = top && top.score >= 40 ? top : null;
+  const livingHit = catalogHit ? null : await matchCatalogProduct(q);
+
+  let brand = "";
+  let model = "";
+  let title = "";
+  let confidence = 0.75;
+  let provider = "shopping_live";
+  let category = "sac";
+  let candidates: Array<{ brand: string; model: string; score: number; source: string }> = [];
+
+  if (catalogHit) {
+    brand = catalogHit.brand;
+    model = catalogHit.model;
+    title = `${brand} ${model}`;
+    confidence = 0.92;
+    provider = "catalog";
+    category = catalogHit.category || "sac";
+    candidates = suggestions.slice(0, 5).map((s, i) => ({
+      brand: s.brand,
+      model: s.model,
+      score: Math.max(0.4, 1 - i * 0.08),
+      source: "catalog",
+    }));
+  } else if (livingHit) {
+    brand = livingHit.brand;
+    model = livingHit.model;
+    title = `${brand} ${model}`;
+    confidence = 0.9;
+    provider = "living_catalog";
+    candidates = [{ brand, model, score: 0.9, source: "living_catalog" }];
+  } else {
+    if (!hasSerpApiKey()) {
+      throw Object.assign(
+        new Error("Indiquez une marque et un modèle (ex. Gucci Ophidia)"),
+        { status: 400 }
+      );
+    }
+    const live = await fetchGoogleShoppingProducts(q, 12);
+    if (!live.length) {
+      throw Object.assign(
+        new Error("Aucun modèle trouvé — essayez « Marque + modèle » (ex. Gucci Ophidia)"),
+        { status: 404 }
+      );
+    }
+    const best = live[0];
+    const parsed = parseTitleBrandModel(best.title);
+    brand = (parsed.brand || "").trim();
+    model = (parsed.model || best.title).trim();
+    title = brand ? `${brand} ${model}` : best.title.slice(0, 160);
+    confidence = brand ? 0.8 : 0.68;
+    provider = "shopping_live";
+    candidates = live.slice(0, 5).map((p, i) => {
+      const pr = parseTitleBrandModel(p.title);
+      return {
+        brand: pr.brand || brand || "inconnue",
+        model: pr.model || p.title.slice(0, 80),
+        score: Math.max(0.35, 0.85 - i * 0.08),
+        source: "shopping",
+      };
+    });
+
+    // Soft check: at least one significant query token in the winning title
+    const tokens = significantQueryTokens(q);
+    const titleN = normalizeText(best.title);
+    if (tokens.length >= 1 && !tokens.some((t) => titleN.includes(t))) {
+      throw Object.assign(
+        new Error("Résultat trop éloigné — précisez la marque et le modèle"),
+        { status: 404 }
+      );
+    }
   }
 
-  const title = `${top.brand} ${top.model}`;
-  const products = hasSerpApiKey() ? await fetchGoogleShoppingProducts(title, 8) : [];
+  const searchTitle = brand ? `${brand} ${model}` : title;
+  const products = hasSerpApiKey() ? await fetchGoogleShoppingProducts(searchTitle, 8) : [];
   let thumbnail = products.find((p) => p.thumbnail)?.thumbnail || "";
   if (!thumbnail && hasSerpApiKey()) {
-    thumbnail = await fetchProductThumbnail(title);
+    thumbnail = await fetchProductThumbnail(searchTitle);
   }
   const match_links = products.map(({ thumbnail: _t, ...rest }) => rest);
 
   const ai: Record<string, unknown> = {
-    brand: top.brand,
-    model: top.model,
+    brand: brand || "inconnue",
+    model,
     product_name: title,
     lens_title: title,
     best_guess: title,
     summary: title,
-    confidence: 0.9,
-    provider: "text",
-    category: top.category || "sac",
-    candidates: kb.slice(0, 5).map((s, i) => ({
-      brand: s.brand,
-      model: s.model,
-      score: Math.max(0.4, 1 - i * 0.08),
-      source: "kb",
-    })),
+    confidence,
+    provider,
+    category,
+    candidates,
     match_links,
     product_image: thumbnail || undefined,
   };
 
   const row = createDraft(thumbnail, ai);
   await saveRfq(row);
+  void rememberProduct(ai, thumbnail).catch(() => {});
 
   return {
     ok: true,
