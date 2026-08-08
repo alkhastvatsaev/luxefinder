@@ -24,8 +24,8 @@ type Result = {
   ai_description: AiDescription;
 };
 
-/** Straight horizontal track along the bottom of the screen. */
-const BAG_PATH = "M0 50 L996 50";
+/** Straight horizontal track — long enough for mobile→desktop without CSS scale-down. */
+const BAG_PATH = "M0 50 L1600 50";
 
 export default function HomeCoverflow({ bagSlides }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -182,7 +182,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
         <ProductSearchBar onSearch={onTextSearch} disabled={busy} />
       </header>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(8.5rem,calc(env(safe-area-inset-bottom)+7.5rem))] pointer-events-none">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pb-[max(9.5rem,calc(env(safe-area-inset-bottom)+8.5rem))] pointer-events-none">
         {result && (
           <div className="mb-2 w-full shrink-0 animate-rise pointer-events-auto">
             <SearchResultsIdentity ai={result.ai_description} />
@@ -352,11 +352,11 @@ export default function HomeCoverflow({ bagSlides }: Props) {
       {/* Straight bag track — bottom of screen (above content hit-layer so drag works) */}
       {showBagMarquee && trackBags.length > 0 && (
         <div
-          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-[7.5rem] w-full overflow-visible sm:h-36 md:h-40"
+          className="absolute inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-20 h-36 w-full overflow-visible sm:h-40 md:h-44"
         >
           <MarqueeAlongSvgPath
             path={BAG_PATH}
-            viewBox="0 0 996 100"
+            viewBox="0 0 1600 100"
             baseVelocity={6}
             slowdownOnHover
             slowDownFactor={0.25}
@@ -366,10 +366,9 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             dragVelocityDecay={0.94}
             dragAwareDirection
             repeat={1}
-            fadeEnds={10}
+            fadeEnds={8}
             keepUpright
             className="h-full w-full cursor-grab"
-            responsive
             enableRollingZIndex
             zIndexBase={1}
             zIndexRange={8}
@@ -377,7 +376,7 @@ export default function HomeCoverflow({ bagSlides }: Props) {
             {trackBags.map((bag, i) => (
               <div
                 key={`${bag.src}-${i}`}
-                className="h-28 w-28 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-32 sm:w-32 md:h-36 md:w-36 md:rounded-[1.35rem]"
+                className="h-32 w-32 select-none overflow-hidden rounded-[1.25rem] shadow-soft ring-1 ring-black/[0.04] sm:h-36 sm:w-36 md:h-40 md:w-40 md:rounded-[1.35rem]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
