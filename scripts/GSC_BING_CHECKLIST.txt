@@ -1,0 +1,10 @@
+# Human GSC / Bing checklist (BLOCKED for agent without console access)
+
+1. Open Google Search Console for luxefinder.app (verification file public/google985da6a6498bd3a5.html).
+2. Submit sitemaps:
+   - https://luxefinder.app/sitemap.xml
+   - https://luxefinder.app/image-sitemap.xml
+3. URL Inspection → request indexing for each URL in scripts/top30-gsc.txt (batch over a few days).
+4. Bing Webmaster Tools → confirm BingSiteAuth.xml ; submit same sitemaps.
+5. After deploy to production, re-run: npm run indexnow (or npx tsx scripts/indexnow-submit.ts).
+6. Monitor Coverage / Page indexing for soft 404s and excluded grey redirects.

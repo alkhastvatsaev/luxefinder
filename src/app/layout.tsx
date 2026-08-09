@@ -10,22 +10,27 @@ const sans = Outfit({
 });
 
 const SITE = "https://luxefinder.app";
+const OG_IMAGE = {
+  url: "/og-default.jpg",
+  width: 1200,
+  height: 1200,
+  alt: "LuxeFinder — photo, budget, vendeurs de luxe",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    default: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
+    default: "LuxeFinder — photo + budget → vendeurs de sacs de luxe",
     template: "%s | LuxeFinder",
   },
   description:
-    "LuxeFinder (aussi écrit Luxe Finder) : envoyez une photo de sac ou accessoire de luxe, indiquez votre budget — on trouve des vendeurs et des offres. App gratuite sur luxefinder.app.",
+    "Envoyez une photo de sac ou accessoire de luxe, indiquez votre budget — LuxeFinder trouve des pistes de vendeurs. App gratuite.",
   applicationName: "LuxeFinder",
   keywords: [
     "LuxeFinder",
-    "Luxe Finder",
-    "luxefinder",
     "trouver vendeur sac luxe",
     "sac luxe occasion photo",
+    "identifier modèle sac",
   ],
   alternates: { canonical: SITE },
   openGraph: {
@@ -33,14 +38,15 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: SITE,
     siteName: "LuxeFinder",
-    title: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
-    description:
-      "LuxeFinder : photo + budget → on trouve les vendeurs. Sacs et mode luxe.",
+    title: "LuxeFinder — photo + budget → vendeurs de sacs de luxe",
+    description: "Photo + budget → pistes vendeurs pour sacs et accessoires de luxe.",
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LuxeFinder — Luxe Finder",
-    description: "Photo. Budget. Offres vendeurs. luxefinder.app",
+    title: "LuxeFinder — photo, budget, vendeurs",
+    description: "Photo. Budget. Offres vendeurs.",
+    images: [OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
 };
@@ -49,7 +55,6 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
-  // Pas de `maximumScale` : bloquer le zoom échoue à WCAG 2.2 (1.4.4 et 1.4.10).
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

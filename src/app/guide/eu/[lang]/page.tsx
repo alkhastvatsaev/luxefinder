@@ -7,6 +7,22 @@ import { pagesByLocale } from "@/lib/seo-pages";
 
 type Props = { params: Promise<{ lang: string }> };
 const SITE = "https://luxefinder.app";
+const OG = {
+  url: `${SITE}/og-default.jpg`,
+  width: 1200,
+  height: 1200,
+  alt: "LuxeFinder — guides Europe",
+};
+
+function euLanguages(): Record<string, string> {
+  const languages: Record<string, string> = {
+    "x-default": `${SITE}/guide/eu/fr`,
+  };
+  for (const l of SEO_EU_LOCALES) {
+    languages[l.code] = `${SITE}/guide/eu/${l.code}`;
+  }
+  return languages;
+}
 
 export function generateStaticParams() {
   return SEO_EU_LOCALES.map((l) => ({ lang: l.code }));
@@ -17,16 +33,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const loc = SEO_EU_LOCALES.find((l) => l.code === lang);
   if (!loc) return { title: "Guides EU" };
   const url = `${SITE}/guide/eu/${lang}`;
+  const title = `Guides — ${loc.country} (${loc.label})`;
   return {
-    title: `Guides LuxeFinder — ${loc.country} (${loc.label})`,
+    title: { absolute: `${title} | LuxeFinder` },
     description: `Guides ${loc.country} : trouver un vendeur, identifier un modèle, budget, occasion, authenticité. Photo + budget → offres.`,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: euLanguages(),
+    },
     openGraph: {
-      title: `LuxeFinder guides — ${loc.country}`,
-      description: `40 guides locaux (${loc.label}) pour cadrer votre recherche.`,
+      title,
+      description: `Guides locaux (${loc.label}) pour cadrer votre recherche de sacs de luxe.`,
       url,
       locale: lang === "en" ? "en_GB" : `${lang}_${lang.toUpperCase()}`,
       type: "website",
+      images: [OG],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      images: [OG.url],
     },
   };
 }
@@ -65,15 +91,18 @@ export default async function GuideEuLangPage({ params }: Props) {
         <Link href="/guide" className="text-black/50 underline-offset-2 hover:underline">
           ← Tous les guides
         </Link>
-        {SEO_EU_LOCALES.filter((l) => l.code !== lang).slice(0, 6).map((l) => (
-          <Link
-            key={l.code}
-            href={`/guide/eu/${l.code}`}
-            className="text-black/40 underline-offset-2 hover:underline"
-          >
-            {l.code}
-          </Link>
-        ))}
+        {SEO_EU_LOCALES.filter((l) => l.code !== lang)
+          .slice(0, 6)
+          .map((l) => (
+            <Link
+              key={l.code}
+              href={`/guide/eu/${l.code}`}
+              className="text-black/40 underline-offset-2 hover:underline"
+              hrefLang={l.code}
+            >
+              {l.code}
+            </Link>
+          ))}
       </div>
       <div className="mt-8">
         <SeoTryCta source={`guide-eu-${lang}`} />
@@ -91,12 +120,9 @@ export default async function GuideEuLangPage({ params }: Props) {
                   <li key={p.slug}>
                     <Link
                       href={`/guide/${p.slug}`}
-                      className="block rounded-2xl border border-black/[0.06] bg-black/[0.015] px-4 py-3 text-sm transition hover:border-black/15 hover:bg-black/[0.03]"
+                      className="block rounded-2xl border border-black/[0.06] px-4 py-3 text-sm font-medium leading-snug hover:border-black/15"
                     >
-                      <span className="font-medium text-black/85">{p.h1}</span>
-                      <span className="mt-1 block line-clamp-2 text-xs text-black/45">
-                        {p.description}
-                      </span>
+                      {p.h1}
                     </Link>
                   </li>
                 ))}

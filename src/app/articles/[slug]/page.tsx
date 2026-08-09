@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = articleUrl(slug);
   const img = articleAbsoluteImageUrl(a);
   return {
-    title: a.h1,
+    title: { absolute: a.h1 },
     description: a.description,
     alternates: { canonical: url },
     openGraph: {

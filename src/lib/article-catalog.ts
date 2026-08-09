@@ -67,6 +67,10 @@ export const ARTICLE_CATALOG: ArticleItem[] = [
         h2: "Pourquoi cette photo compte pour LuxeFinder",
         body: "Sur LuxeFinder, cette image studio sert de référence visuelle : silhouette Cargo, contraste toile/cuir, placement des poches. L’objectif SEO et Images Google est clair — associer la photo au nom « LuxeFinder » pour que la recherche « luxe finder » fasse remonter ces clichés dans l’onglet Images.",
       },
+      {
+        h2: "Budget et recherche aujourd’hui",
+        body: "Sur le marché occasion, une Cargo se négocie selon état, hardware et rareté de la combinaison toile/cuir. Avant d’acheter : photo nette, budget plafond, preuves du lot, et expertise si le montant est élevé. LuxeFinder sert à cadrer le modèle puis à explorer des pistes vendeurs — pas à certifier l’authenticité.",
+      },
     ],
     sources: [
       {
@@ -107,6 +111,10 @@ export const ARTICLE_CATALOG: ArticleItem[] = [
         h2: "Identifier avec LuxeFinder",
         body: "Sur une photo, les indices Touch sont les zones exotiques brillantes et le contraste avec le cuir grainé. LuxeFinder utilise ce type d’image pour entraîner l’œil (et le modèle) à séparer Birkin classique, Cargo, Touch et HAC.",
       },
+          {
+        h2: "Identifier et acheter sans se précipiter",
+        body: "Le Touch se reconnaît aux inserts exotiques contrastés. Exigez des macros des zones de jonction cuir/exotique. Fixez un budget incluant expertise, puis comparez plusieurs vendeurs avec photos datées.",
+      },
     ],
     sources: [
       {
@@ -143,6 +151,10 @@ export const ARTICLE_CATALOG: ArticleItem[] = [
       {
         h2: "Sur LuxeFinder",
         body: "Repérer Ophidia = lire Web + Double G + toile GG. La page associe le nom LuxeFinder à cette photo pour le référencement Images.",
+      },
+          {
+        h2: "Repères Ophidia pour l’occasion",
+        body: "Bande Web, Double G, toile GG : vérifiez usure de la bande et symétrie du logo. Annoncez un budget réaliste et demandez l’intérieur + coins avant tout paiement.",
       },
     ],
     sources: [
@@ -181,6 +193,10 @@ export const ARTICLE_CATALOG: ArticleItem[] = [
         h2: "Repères LuxeFinder",
         body: "Sur image : quilting, proportion medium, contraste caviar / métal doré. Titre et alt portent « LuxeFinder » pour lier la marque à ce cliché dans Google Images.",
       },
+          {
+        h2: "Checklist acheteur occasion",
+        body: "Matelassé aligné, chaîne, coins, stickers/série selon génération, total rendu. Une Classic Flap « trop belle » hors cote mérite un stop. Utilisez une photo pour cadrer la taille/matériau dans LuxeFinder, puis appliquez la grille anti-arnaque.",
+      },
     ],
     sources: [
       {
@@ -217,6 +233,10 @@ export const ARTICLE_CATALOG: ArticleItem[] = [
       {
         h2: "Photo LuxeFinder",
         body: "Silhouette noire mate, hardware argenté, triangle : autant de signaux pour l’identification photo. Alt et légende intègrent LuxeFinder pour le SEO Images.",
+      },
+          {
+        h2: "Re-Edition : pièges fréquents",
+        body: "Le nylon noir se copie beaucoup. Contrôlez logo triangle, finitions, bandoulière. Photo + budget sur LuxeFinder pour cadrer, puis vendeur avec preuves écrites uniquement.",
       },
     ],
     sources: [

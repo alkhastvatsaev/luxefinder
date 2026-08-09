@@ -26,105 +26,129 @@ export type SeoPage = {
 const SEO_PAGES_CORE: SeoPage[] = [
 
   {
-    slug: "trouver-vendeur-sac-luxe",
-    title: "Trouver un vendeur de sac de luxe selon votre budget",
-    h1: "Trouver un vendeur de sac de luxe",
-    description:
-      "Envoyez une photo, fixez un budget : LuxeFinder compare des offres de vendeurs pour sacs et accessoires de luxe.",
-    intent: "howto",
-    intro:
-      "Chercher un vendeur sérieux prend du temps : mauvais liens, catalogues flous, prix incohérents. LuxeFinder part de votre photo et de votre budget pour remonter des pistes concrètes.",
-    sections: [
-      {
-        h2: "Pourquoi partir d’une photo",
-        body: "Une photo isole le modèle (forme, hardware, toile, logo). Sans identification claire, vous comparez des articles qui ne sont pas les mêmes — et vous perdez du budget.",
-      },
-      {
-        h2: "Fixer un budget avant de discuter",
-        body: "Indiquez une fourchette réaliste. Les vendeurs répondent mieux quand la contrainte est claire. LuxeFinder intègre le budget dans la recherche d’offres.",
-      },
-      {
-        h2: "Passer à l’action",
-        body: "Ouvrez LuxeFinder, déposez une photo, saisissez votre budget, puis étudiez les pistes proposées. Gardez les échanges écrits et demandez des preuves (photos récentes, délais).",
-      },
-    ],
-    related: ["budget-sac-luxe", "identifier-modele-sac", "eviter-arnaques-vendeurs"],
-  },
+  slug: "trouver-vendeur-sac-luxe",
+  title: "Trouver un vendeur de sac de luxe selon votre budget",
+  h1: "Trouver un vendeur de sac de luxe",
+  description: "Méthode complète : identifier le modèle sur photo, fixer un budget, short-lister des vendeurs d’occasion sérieux, vérifier les preuves, éviter les arnaques.",
+  intent: "howto",
+  intro: "Trouver un vendeur fiable pour un sac de luxe n’est pas une question de chance : c’est une méthode. Sans modèle clairement nommé et sans budget, vous comparez des pièces différentes et vous multipliez les allers-retours inutiles. Ce guide donne un ordre de travail utilisable dès aujourd’hui, que vous achetiez près de chez vous ou via un canal distant.",
+  sections: [
+    {
+      h2: "Clarifier ce que vous cherchez vraiment",
+      body: "Écrivez en une ligne : marque, modèle, taille approximative, état acceptable (neuf boutique, excellent, bon avec traces d’usage), et usage (quotidien, soirée, voyage, collection). Cette phrase devient le brief que vous enverrez aux vendeurs. Elle évite les discussions du type « je cherche un truc dans le genre ». Si vous n’avez qu’une photo Instagram, une vitrine ou un souvenir flou, commencez par l’identification du modèle avant de parler prix. Un mauvais nom de modèle entraîne de mauvais vendeurs et de mauvais budgets. Ajoutez aussi vos contraintes non négociables : délai maximum, refus d’acompte hors plateforme, besoin d’une facture, ou nécessité d’une expertise avant paiement final. Plus ces règles sont écrites tôt, moins vous serez tenté de les abandonner sous la pression d’une « bonne affaire ».",
+    },
+    {
+      h2: "Pourquoi partir d’une photo",
+      body: "Une photo nette isole la silhouette, le hardware, la toile ou le cuir, et les proportions. Sans ça, « un Speedy » ou « un Classic Flap » peut désigner trois versions différentes avec des écarts de prix importants. Demandez ou prenez au minimum : face, profil, intérieur, gros plan ferrures, et une vue de la matière en lumière naturelle. Une seule photo lifestyle floue ne suffit presque jamais pour un engagement sérieux. Si le vendeur refuse des photos datées du lot réel et n’envoie que des images catalogue, considérez que vous n’achetez pas encore un article identifiable — vous achetez une promesse. Dans ce cas, passez votre chemin ou exigez un nouveau set de clichés avant toute négociation.",
+    },
+    {
+      h2: "Fixer un budget avant de discuter",
+      body: "Indiquez une fourchette (plancher–plafond) qui inclut livraison, éventuelle commission de plateforme, et une marge pour frais imprévus (5–10 %). Les vendeurs sérieux répondent mieux à une contrainte claire. Un prix « trop beau » hors marché, sans défaut documenté, est un signal d’alerte, pas une opportunité. Ancrez votre plafond sur au moins trois annonces comparables récentes (même modèle, état proche). Si vous ne trouvez aucune comparable, c’est souvent que le brief modèle est encore trop vague. Affinez d’abord l’identification, puis revenez au budget.",
+    },
+    {
+      h2: "Où chercher des vendeurs légitimes",
+      body: "Privilégiez les canaux d’occasion qui documentent la pièce : plateformes d’authentification, dépôts-vente spécialisés, boutiques seconde main avec historique, annonces avec photos du lot réel et échanges écrits. Évitez les profils créés la veille, les catalogues stock photos uniquement, et toute urgence artificielle (« dernier à ce prix, payez maintenant »). Plus le montant est élevé, plus vous devez exiger de preuves et, si besoin, une expertise indépendante avant le paiement définitif. La vitesse n’est jamais un critère de qualité sur ce marché.",
+    },
+    {
+      h2: "Grille de contact vendeur",
+      body: "1) Confirmer modèle + taille + année approximative. 2) Demander photos datées du même article avec un objet ou une date de référence. 3) Prix total rendu. 4) Délai et mode d’envoi. 5) Conditions de retour / politique d’authenticité du canal. Notez chaque réponse dans un tableau simple. Refusez de payer sans preuves écrites. Si une réponse est évasive sur deux critères critiques, passez au vendeur suivant sans négocier davantage. Gardez captures d’écran des accords. En cas de litige, ce dossier vaut plus qu’un souvenir oral.",
+    },
+    {
+      h2: "Passer à l’action avec LuxeFinder",
+      body: "Sur luxefinder.app : déposez la photo, indiquez le budget, puis étudiez les pistes proposées comme une short-list — pas comme un ordre d’achat. Appliquez ensuite la grille ci-dessus hors de l’app. LuxeFinder n’est pas une marketplace et ne garantit pas l’authenticité à votre place. Contenu informatif destiné à l’achat d’occasion légitime. Distinct de luxfinder.com (aggregator fashion) et luxefinder.ae (immobilier).",
+    },
+  ],
+  related: ["budget-sac-luxe","identifier-modele-sac","eviter-arnaques-vendeurs","comparer-offres-vendeurs"],
+},
   {
-    slug: "budget-sac-luxe",
-    title: "Budget sac de luxe : comment cadrer votre recherche",
-    h1: "Définir un budget pour un sac de luxe",
-    description:
-      "Fourchettes, frais annexes, et comment LuxeFinder utilise votre budget pour trouver des vendeurs.",
-    intent: "howto",
-    intro:
-      "Sans budget, chaque offre semble « intéressante ». Avec un plafond clair, vous filtrez plus vite et vous évitez les négociations sans issue.",
-    sections: [
-      {
-        h2: "Ce que le budget doit couvrir",
-        body: "Prix article + éventuels frais de port + marge de sécurité. Si un intermediaire ou un agent intervient, ajoutez ses frais de service.",
-      },
-      {
-        h2: "Annoncer le budget aux vendeurs",
-        body: "Soyez transparent sur la fourchette. Demandez le total « rendu » (article + livraison). Refusez les acomptes obscurs.",
-      },
-      {
-        h2: "Dans LuxeFinder",
-        body: "Le champ budget oriente la recherche d’offres. Commencez large, puis resserrez une fois le modèle confirmé.",
-      },
-    ],
-    related: ["trouver-vendeur-sac-luxe", "comparer-offres-vendeurs", "premiere-recherche"],
-  },
+  slug: "budget-sac-luxe",
+  title: "Budget sac de luxe : comment cadrer votre recherche",
+  h1: "Définir un budget pour un sac de luxe",
+  description: "Fourchettes réalistes, frais cachés, négociation : cadrer un budget avant de contacter des vendeurs de sacs de luxe en occasion.",
+  intent: "howto",
+  intro: "Sans plafond, chaque offre semble intéressante. Avec un budget écrit, vous filtrez plus vite, vous négociez mieux, et vous évitez les conversations sans issue. Ce guide transforme un montant vague en contrainte opérationnelle.",
+  sections: [
+    {
+      h2: "Ce que le budget doit vraiment couvrir",
+      body: "Prix de l’article + livraison + assurance éventuelle + frais de plateforme ou d’intermédiaire + une marge de sécurité pour petites réparations ou restauration (souvent 5–10 %). Si vous comparez neuf boutique et occasion, convertissez tout en coût total rendu chez vous. Sinon vous comparez des pommes et des poires. Pour les pièces à fort enjeu, ajoutez aussi le coût potentiel d’une expertise indépendante avant paiement définitif.",
+    },
+    {
+      h2: "Ancrages de marché",
+      body: "Placez votre plafond grâce à trois annonces comparables récentes : même modèle, état proche, canal similaire. Notez la date des comparables : une cote d’il y a deux ans peut être hors sujet. Un écart de −40 % sans explication (défaut, doute d’authenticité, vente urgente non documentée) mérite un stop, pas un empressement. Si le marché affiche une fourchette large, partez du milieu haut pour négocier, pas du fantasme du prix le plus bas trouvé une fois sur une capture floue.",
+    },
+    {
+      h2: "Annoncer le budget aux vendeurs",
+      body: "Soyez transparent sur la fourchette. Demandez le total rendu. Refusez acomptes obscurs et paiements non traçables « pour réserver ». Si le vendeur refuse toute photo récente une fois le budget dit, passez au suivant. Un vendeur sérieux accepte de documenter la pièce avant de parler argent sérieusement. Évitez de révéler immédiatement votre plafond absolu si vous êtes encore en phase d’exploration : indiquez une bande, puis resserrez.",
+    },
+    {
+      h2: "Stratégie large puis serrée",
+      body: "Commencez large pour voir l’offre disponible. Resserrez une fois le modèle et l’état confirmés. Tenez un tableau : prix, état, preuves, délai, score de confiance. Décidez avec la grille, pas avec l’émotion du moment. Revenez sur votre budget après chaque short-list : il doit rester cohérent avec les preuves obtenues, pas avec l’envie d’acheter vite.",
+    },
+    {
+      h2: "Dans LuxeFinder",
+      body: "Le champ budget oriente la recherche d’offres. Il ne remplace pas votre jugement sur l’authenticité ni sur le vendeur. Utilisez-le pour prioriser, puis vérifiez hors de l’app avec photos et conditions écrites. Contenu informatif. LuxeFinder aide à cadrer ; la décision d’achat reste la vôtre.",
+    },
+  ],
+  related: ["trouver-vendeur-sac-luxe","comparer-offres-vendeurs","premiere-recherche"],
+},
   {
-    slug: "identifier-modele-sac",
-    title: "Identifier le modèle d’un sac de luxe à partir d’une photo",
-    h1: "Identifier un modèle de sac sur photo",
-    description:
-      "Angles, détails hardware, toile et proportions : méthode pour reconnaître un modèle avant de chercher un vendeur.",
-    intent: "howto",
-    intro:
-      "Mal nommer un modèle fait dériver toute la recherche. Prenez le temps d’isoler les signaux distinctifs avant de contacter qui que ce soit.",
-    sections: [
-      {
-        h2: "Angles utiles",
-        body: "Face, profil, intérieur, hardware (fermeture, cadenas, pieds), et une vue de la toile ou du cuir. Évitez les photos trop floues ou trop stylisées.",
-      },
-      {
-        h2: "Signaux de modèle",
-        body: "Forme de la silhouette, type d’anse, présence d’une pochette, motif monogram, fermoir caractéristique. Comparez avec des fiches officielles ou des bases modèles.",
-      },
-      {
-        h2: "LuxeFinder vous aide",
-        body: "Déposez la photo dans l’app : l’analyse propose une description de modèle pour cadrer la chasse aux offres.",
-      },
-    ],
-    related: ["trouver-vendeur-sac-luxe", "photos-qc-lire", "tailles-sacs-luxe"],
-  },
+  slug: "identifier-modele-sac",
+  title: "Identifier le modèle d’un sac de luxe à partir d’une photo",
+  h1: "Identifier un modèle de sac sur photo",
+  description: "Angles, hardware, toile, proportions : méthode pour reconnaître un modèle avant de chercher un vendeur.",
+  intent: "howto",
+  intro: "Mal nommer un modèle fait dériver toute la recherche : mauvais prix, mauvais vendeurs, mauvaises comparaisons. L’identification précède le budget et le contact.",
+  sections: [
+    {
+      h2: "Angles utiles (checklist)",
+      body: "Face entière, profil pour la profondeur, ouvert (doublure et poches), gros plan hardware (fermeture, cadenas, pieds, logo métallique), matière en lumière naturelle, et si possible une vue du dessous. Une seule photo lifestyle floue ne suffit presque jamais. Si vous achetez à distance, exigez ce set avant toute discussion de prix. Évitez les filtres agressifs et les recadrages qui cachent les coins : ce sont souvent les zones qui révèlent l’état réel.",
+    },
+    {
+      h2: "Signaux qui discriminent les modèles",
+      body: "Silhouette (trapèze, rectangle, seau), type d’anses et bandoulière, fermoir caractéristique, motif monogram vs cuir uni, proportions base/hauteur. Pour les classiques (Speedy, Neverfull, Birkin, Classic Flap), la taille change l’usage : notez une mesure en cm si possible. Un détail seul ne suffit pas : croisez silhouette + hardware + matière. C’est la cohérence d’ensemble qui nomme le modèle.",
+    },
+    {
+      h2: "Erreurs fréquentes",
+      body: "Confondre des lignes proches (Neverfull vs OnTheGo, Classic Flap vs Boy, Birkin vs Kelly), ignorer les rééditions, se fier au seul logo visible sur une photo marketing. Croisez toujours avec des fiches modèles fiables et des photos du lot réel. Méfiez-vous des intitulés vendeur trop marketing (« ultra rare », « édition collector ») sans attributs techniques. Si deux hypothèses restent ouvertes, traitez-les comme deux recherches séparées avec deux budgets — ne mélangez pas les comparables.",
+    },
+    {
+      h2: "Préparer le brief vendeur",
+      body: "Une fois le modèle nommé : marque + nom + taille + couleur/matériau + année approximative si connue. Ce brief évite les échanges du type « c’est le même non ? ». Joignez vos photos annotées si besoin. Demandez au vendeur de confirmer chaque attribut par écrit. Plus le brief est précis, plus les réponses sont filtrées — et plus vous gagnez de temps.",
+    },
+    {
+      h2: "Aide LuxeFinder",
+      body: "Déposez la photo dans l’app : l’analyse propose un cadrage de modèle pour orienter la chasse aux offres. Ce n’est pas un certificat d’authenticité. Pour les pièces à fort enjeu, faites expertiser physiquement avant paiement définitif. Ensuite enchaînez sur budget, comparaison d’offres, puis grille anti-arnaque.",
+    },
+  ],
+  related: ["trouver-vendeur-sac-luxe","tailles-sacs-luxe","authentifier-sac-luxe"],
+},
   {
-    slug: "comparer-offres-vendeurs",
-    title: "Comparer des offres de vendeurs de sacs de luxe",
-    h1: "Comparer les offres vendeurs",
-    description:
-      "Prix, preuves photos, délais, conditions de paiement : grille simple pour départager des vendeurs.",
-    intent: "howto",
-    intro:
-      "Deux offres au même prix peuvent cacher des risques très différents. Une grille courte évite les décisions impulsives.",
-    sections: [
-      {
-        h2: "Grille minimale",
-        body: "1) Prix total 2) Photos du lot réel 3) Délai 4) Mode de paiement 5) Historique / cohérence du catalogue. Notez chaque critère.",
-      },
-      {
-        h2: "Red flags",
-        body: "Pression, refus de photo récente, changement de numéro, catalogues copiés, prix irréalistes pour la qualité annoncée.",
-      },
-      {
-        h2: "Après LuxeFinder",
-        body: "Utilisez les pistes proposées comme short-list, puis appliquez la grille avant tout paiement.",
-      },
-    ],
-    related: ["eviter-arnaques-vendeurs", "paiement-securise", "budget-sac-luxe"],
-  },
+  slug: "comparer-offres-vendeurs",
+  title: "Comparer des offres de vendeurs de sacs de luxe",
+  h1: "Comparer les offres vendeurs",
+  description: "Prix, preuves photos, délais, paiement : grille pour départager des vendeurs de sacs de luxe en occasion.",
+  intent: "howto",
+  intro: "Deux offres au même prix peuvent cacher des risques très différents. Une grille courte évite les décisions impulsives et les regrets coûteux.",
+  sections: [
+    {
+      h2: "Grille minimale (notez 1–5)",
+      body: "1) Prix total rendu 2) Photos du lot réel (pas catalogue) 3) Cohérence modèle/état 4) Délai et mode d’envoi 5) Traçabilité du paiement / conditions 6) Historique ou réputation du canal. Additionnez. Fixez un seuil minimal avant de commencer. En dessous, vous passez sans négocier. Le but n’est pas de trouver l’offre parfaite : c’est d’éliminer rapidement les dossiers faibles.",
+    },
+    {
+      h2: "Red flags",
+      body: "Pression temporelle, refus de photo récente, changement de numéro en cours de discussion, catalogues copiés, prix irréalistes, paiement uniquement irréversible sans protection, « authentification » vague sans méthode. Un seul red flag fort suffit souvent à sortir une offre de la short-list, même si le prix est attractif. Documentez pourquoi vous écartez une offre : cela évite d’y revenir plus tard sous l’effet FOMO.",
+    },
+    {
+      h2: "Comparer à budget égal",
+      body: "Alignez les offres sur le même modèle et un état comparable. Sinon vous comparez des poires et des pommes. Si une offre est bien moins chère, exigez l’explication écrite (défaut, provenance, urgence) avant de la favoriser. Convertissez toujours en total rendu : une offre « moins chère » avec livraison opaque peut finir plus chère.",
+    },
+    {
+      h2: "Après LuxeFinder",
+      body: "Traitez les pistes comme une short-list. Appliquez la grille avant tout paiement. Gardez captures d’écran des accords. La décision finale et la vérification d’authenticité restent les vôtres. Contenu informatif pour l’achat d’occasion légitime.",
+    },
+  ],
+  related: ["eviter-arnaques-vendeurs","budget-sac-luxe","trouver-vendeur-sac-luxe"],
+},
   {
     slug: "premiere-recherche",
     title: "Première recherche LuxeFinder : parcours recommandé",
@@ -403,30 +427,36 @@ const SEO_PAGES_CORE: SeoPage[] = [
     related: ["comment-commander-yupoo", "yupoo-vs-weidian", "qc-checklist"],
   },
   {
-    slug: "eviter-arnaques-vendeurs",
-    title: "Éviter les arnaques vendeurs",
-    h1: "Éviter les arnaques : signaux et réflexes",
-    description:
-      "Red flags vendeurs, paiements risqués, catalogues fantômes — checklist sécurité acheteur FR.",
-    intent: "howto",
-    intro:
-      "Les arnaques existent. Quelques réflexes simples éliminent la majorité des mauvais dossiers.",
-    sections: [
-      {
-        h2: "Red flags",
-        body: "Paiement uniquement crypto sans preuve, refus total de QC, urgence artificielle, et profils créés la veille.",
-      },
-      {
-        h2: "Réflexes",
-        body: "Passer par un agent quand c’est possible, croiser le vendeur sur plusieurs fils, garder les captures d’écran des accords.",
-      },
-      {
-        h2: "Si ça sent mauvais",
-        body: "Arrêtez. Un autre vendeur existe toujours. LuxeFinder privilégie la prudence à la vitesse.",
-      },
-    ],
-    related: ["paiement-securise", "whatsapp-vendeur-chine", "agent-france"],
-  },
+  slug: "eviter-arnaques-vendeurs",
+  title: "Éviter les arnaques vendeurs de sacs de luxe",
+  h1: "Éviter les arnaques : signaux et réflexes",
+  description: "Red flags vendeurs, paiements risqués, fausses preuves : checklist sécurité pour acheteurs de sacs de luxe en France.",
+  intent: "howto",
+  intro: "Les arnaques existent sur le marché de l’occasion luxe. Quelques réflexes simples éliminent la majorité des mauvais dossiers — sans rien garantir à 100 %. Ce guide est informatif et vise l’achat légitime.",
+  sections: [
+    {
+      h2: "Red flags immédiats",
+      body: "Paiement uniquement via méthode non traçable sans preuve, refus total de photos datées du lot, urgence artificielle, profil créé la veille, prix hors marché sans défaut documenté, documents d’authenticité « trop parfaits » en JPEG flou. Ces signaux apparaissent souvent ensemble. Plus ils s’accumulent, plus la probabilité d’un mauvais dossier grimpe. Ne négociez pas « juste un peu » avec un dossier déjà rouge : changez de vendeur.",
+    },
+    {
+      h2: "Réflexes avant de payer",
+      body: "Échanges écrits uniquement, photos macro demandées, croisement du vendeur/canal, total rendu confirmé, délai d’envoi écrit. Sur plateforme, restez dans le circuit de paiement protégé quand il existe. Hors plateforme, augmentez le niveau d’exigence proportionnellement au montant. Pour les montants élevés, planifiez une expertise indépendante avant le paiement définitif.",
+    },
+    {
+      h2: "Fausses preuves courantes",
+      body: "Photos catalogue reprises ailleurs, cartes et hologrammes facilement falsifiables, vidéos recyclées, « certificats » sans organisme identifiable. Demandez un objet de référence dans la photo (date manuscrite, ticket du jour). Comparez avec d’autres annonces du même vendeur : les incohérences sautent souvent aux yeux. Une preuve isolée ne remplace jamais la cohérence d’ensemble.",
+    },
+    {
+      h2: "Si ça sent mauvais",
+      body: "Arrêtez. Un autre vendeur existe toujours. Ne « sauvez » pas une mauvaise affaire par entêtement. Signalez les profils frauduleux aux plateformes concernées quand c’est possible. Gardez votre dossier (messages, images) : il sert si vous devez documenter une tentative d’arnaque.",
+    },
+    {
+      h2: "Rôle de LuxeFinder",
+      body: "L’app aide à cadrer modèle et budget, puis à explorer des pistes. Elle ne vend pas de contrefaçons et ne remplace pas une expertise. Distinct de luxfinder.com et luxefinder.ae. Pas de facilitation d’achat d’imitations. Utilisez ensuite les guides budget, comparaison d’offres et identification modèle pour structurer votre décision.",
+    },
+  ],
+  related: ["comparer-offres-vendeurs","trouver-vendeur-sac-luxe","authentifier-sac-luxe"],
+},
   {
     slug: "yupoo-vs-weidian",
     title: "Yupoo vs Weidian : quelles différences",
@@ -630,80 +660,97 @@ const SEO_PAGES_CORE: SeoPage[] = [
 
   // ── Batch 2: Marques ─────────────────────────────────────────────
   {
-    slug: "louis-vuitton",
-    title: "Guide Louis Vuitton — LuxeFinder",
-    h1: "Guide discret Louis Vuitton",
-    description:
-      "Vendeur, QC, livraison FR pour modèles LV — Neverfull, Speedy et classiques.",
-    intent: "brand",
-    brands: ["louis_vuitton"],
-    intro:
-      "Comment identifier un vendeur sérieux, lire un QC et anticiper la livraison en France — sans bruit.",
-    sections: [
-      {
-        h2: "Repères vendeur",
-        body: "Yupoo + WhatsApp cohérents, QC historiques sur les mêmes modèles, pas de catalogue infini sans preuve.",
-      },
-      {
-        h2: "QC LV",
-        body: "Embossing, symétrie monogram, coutures, hardware. Comparez plusieurs photos du même batch.",
-      },
-      {
-        h2: "Livraison FR",
-        body: "Agent recommandé pour une première pièce. Estimez le shipping avant validation finale.",
-      },
-    ],
-    related: ["neverfull", "comment-commander-yupoo", "qc-checklist"],
-  },
+  slug: "louis-vuitton",
+  title: "Guide Louis Vuitton — modèles, budget, vendeurs",
+  h1: "Guide Louis Vuitton pour acheteurs",
+  description: "Neverfull, Speedy, Alma : identifier le modèle, cadrer un budget occasion, et trouver des vendeurs sérieux.",
+  intent: "brand",
+  brands: ["louis_vuitton"],
+  intro: "Louis Vuitton domine les recherches d’occasion. La difficulté n’est pas de trouver une annonce : c’est de nommer le bon modèle et d’éliminer les mauvaises pistes avant de payer.",
+  sections: [
+    {
+      h2: "Modèles les plus cherchés",
+      body: "Neverfull (PM/MM/GM), Speedy (25/30/35), Alma, Pochette Métis, Keepall. Chaque ligne a des tailles et toiles (Monogram, Damier, cuirs) qui changent le prix et l’usage. Notez taille + matière avant de comparer. Une Speedy 30 et une Speedy 35 ne se négocient pas comme des équivalents. Si vous hésitez entre deux lignes, faites deux briefs séparés plutôt qu’un brief flou.",
+    },
+    {
+      h2: "Points de vigilance occasion",
+      body: "Usure des coins, déformation de la base, teinte des poignées Vachetta, fermetures, régularité du monogram. Exigez des photos macro et une vue intérieure. Un prix très bas sur Neverfull/Speedy en « excellent état » mérite un contrôle renforcé. Méfiez-vous des photos uniquement studio : demandez le lot réel, daté.",
+    },
+    {
+      h2: "Budget et canaux",
+      body: "Ancrez votre plafond sur 3 annonces comparables récentes. Privilégiez plateformes ou dépôts-vente qui documentent la pièce. Échanges écrits, total rendu, pas de pression. Incluez livraison et éventuelle restauration légère dans le budget. Plus le montant monte, plus une expertise indépendante devient rationnelle.",
+    },
+    {
+      h2: "Méthode LuxeFinder",
+      body: "Photo → identification de ligne → budget → pistes vendeurs. Ensuite appliquez votre grille anti-arnaque. Contenu informatif, sans affiliation Louis Vuitton. L’app ne remplace pas une authentification professionnelle.",
+    },
+    {
+      h2: "Pages utiles",
+      body: "Poursuivez vers les fiches modèles Speedy / Neverfull, les guides budget et éviter les arnaques, puis l’app pour lancer une recherche photo. Gardez un tableau de comparaison si plusieurs offres arrivent en parallèle. Objectif : décider avec des preuves, pas avec l’urgence.",
+    },
+  ],
+  related: ["budget-sac-luxe","eviter-arnaques-vendeurs","identifier-modele-sac","trouver-vendeur-sac-luxe"],
+},
   {
-    slug: "hermes",
-    title: "Guide Hermès — LuxeFinder",
-    h1: "Guide discret Hermès",
-    description: "Birkin, Kelly, Constance : repères QC et vendeurs pour acheteurs FR.",
-    intent: "brand",
-    brands: ["hermes"],
-    intro:
-      "Birkin, Kelly, Constance : repères qualité et red flags vendeurs pour acheteurs FR.",
-    sections: [
-      {
-        h2: "Points QC",
-        body: "Cuir, ferroir, symétrie, couture sellier. Exigez lumière naturelle et détails fermoir.",
-      },
-      {
-        h2: "Vendeur",
-        body: "Méfiez-vous des catalogues trop larges sans photos atelier. Croisez les retours community.",
-      },
-      {
-        h2: "Parcours",
-        body: "W2C → QC strict → agent ou WA. Pour Hermès, la patience bat la précipitation.",
-      },
-    ],
-    related: ["birkin", "photos-qc-lire", "eviter-arnaques-vendeurs"],
-  },
+  slug: "hermes",
+  title: "Guide Hermès — Birkin, Kelly, budget, vendeurs",
+  h1: "Guide Hermès pour acheteurs",
+  description: "Birkin, Kelly, Constance : repères d’identification, budget occasion, et méthode pour trouver des vendeurs sérieux.",
+  intent: "brand",
+  brands: ["hermes"],
+  intro: "Chez Hermès, l’enjeu occasion est maximal : montants élevés, contrefaçons sophistiquées, et écarts de prix selon cuir, taille et hardware. La méthode compte plus que la précipitation.",
+  sections: [
+    {
+      h2: "Familles à connaître",
+      body: "Birkin et Kelly (tailles, cuirs Togo/Epsom/Clemence…, gold/palladium), Constance, Picotin, Evelyne. Une erreur de taille ou de cuir fausse tout le budget. Nommez d’abord la famille exacte avant de comparer des annonces. Les détails de couleur et de hardware peuvent déplacer fortement la cote.",
+    },
+    {
+      h2: "Contrôles avant offre",
+      body: "Couture sellier, symétrie, gravures, chaleur/odeur du cuir sur place si possible, cohérence date/stamp. Photos catalogue seules = insuffisant. Pour les montants élevés, prévoyez une expertise indépendante. Exigez des macros et, si possible, une vidéo 360° du lot réel.",
+    },
+    {
+      h2: "Budget réaliste",
+      body: "Les cotes bougent selon couleur et rareté. Ancrez-vous sur des ventes comparables documentées, pas sur un « on m’a dit ». Incluez frais d’expertise et livraison sécurisée dans le plafond. Un prix anormalement bas sans défaut documenté est un stop, pas une aubaine.",
+    },
+    {
+      h2: "Vendeurs et preuves",
+      body: "Historique du canal, factures si disponibles, échanges écrits, refus de l’urgence. LuxeFinder aide à cadrer le modèle sur photo ; il ne remplace pas l’expertise Hermès. Contenu informatif, sans affiliation à la maison.",
+    },
+    {
+      h2: "Suite",
+      body: "Fiches Birkin / Kelly, guides authentifier et éviter les arnaques, puis recherche photo dans l’app. Travaillez une short-list courte plutôt qu’une vingtaine d’annonces superficielles. Décidez seulement quand preuves et budget sont alignés.",
+    },
+  ],
+  related: ["eviter-arnaques-vendeurs","authentifier-sac-luxe","budget-sac-luxe","trouver-vendeur-sac-luxe"],
+},
   {
-    slug: "chanel",
-    title: "Guide Chanel — LuxeFinder",
-    h1: "Guide discret Chanel",
-    description: "Classic, Flap, 22 — checklist QC et conseils acheteurs France.",
-    intent: "brand",
-    brands: ["chanel"],
-    intro: "Flap bags, Classic et 22 — checklist discrète pour acheteurs exigeants.",
-    sections: [
-      {
-        h2: "QC clé",
-        body: "Alignement matelassé, poids hardware, stickers / série sur photos, finition chaînes.",
-      },
-      {
-        h2: "Offres trop belles",
-        body: "Sans historique communautaire, passez votre chemin. Demandez des QC datés.",
-      },
-      {
-        h2: "Suite",
-        body: "Reliez ce guide à la checklist QC générale et au parcours première commande.",
-      },
-    ],
-    related: ["qc-checklist", "premiere-commande", "sac-bandeouliere"],
-  },
+  slug: "chanel",
+  title: "Guide Chanel — Classic Flap, budget, vendeurs",
+  h1: "Guide Chanel pour acheteurs",
+  description: "Classic Flap, 2.55, WOC : identification, points QC, budget occasion et vendeurs sérieux.",
+  intent: "brand",
+  brands: ["chanel"],
+  intro: "Chanel est ultra-contrefait. Matelassé, chaîne et ferrures se jugent au zoom. Nommez d’abord la ligne exacte avant de parler prix.",
+  sections: [
+    {
+      h2: "Lignes fréquentes",
+      body: "Classic Flap (tailles), 2.55, Boy, 19, Wallet on Chain, 22. Hardware doré vs argenté, caviar vs lambskin : chaque détail déplace le marché occasion. Un brief flou (« un Chanel matelassé ») produit des comparaisons inutiles. Fixez taille + matière + hardware avant la chasse aux offres.",
+    },
+    {
+      h2: "QC photo utile",
+      body: "Alignement du matelassé, gravure CC, poids/comportement de la chaîne, coutures, numéro de série / stickers selon génération, usure des coins. Demandez des macros, pas une seule photo lifestyle. Les coins et la chaîne racontent souvent plus que le logo.",
+    },
+    {
+      h2: "Budget",
+      body: "Les hausses boutique historiques ont soutenu l’occasion, mais l’état et l’authenticité dominent. Comparez 3 annonces équivalentes avant de fixer un plafond. Incluez livraison et éventuelle restauration dans le total. Méfiez-vous des écarts extrêmes sans explication écrite.",
+    },
+    {
+      h2: "Parcours LuxeFinder",
+      body: "Photo → cadrage modèle → budget → short-list vendeurs → grille anti-arnaque. Pas d’affiliation Chanel ; contenu informatif pour l’occasion légitime. L’app aide à démarrer ; la vérification reste la vôtre.",
+    },
+  ],
+  related: ["budget-sac-luxe","eviter-arnaques-vendeurs","identifier-modele-sac","comparer-offres-vendeurs"],
+},
   {
     slug: "dior",
     title: "Guide Dior — LuxeFinder",
@@ -1681,7 +1728,46 @@ const SEO_PAGES_CORE: SeoPage[] = [
   },
 ];
 
-export const SEO_PAGES: SeoPage[] = [
+/** Hard-purged counterfeit / Yupoo transactional SEO — redirected in next.config. */
+export const SEO_PURGED_SLUGS = [
+  "comment-commander-yupoo",
+  "yupoo-vs-weidian",
+  "acheter-louis-vuitton-replique",
+  "acheter-hermes-replique",
+  "acheter-chanel-replique",
+  "acheter-dior-replique",
+  "acheter-gucci-replique",
+  "acheter-cartier-replique",
+  "acheter-rolex-replique",
+  "acheter-saint-laurent-replique",
+  "acheter-bottega-replique",
+  "acheter-fendi-replique",
+  "acheter-celine-replique",
+  "acheter-van-cleef-replique",
+  "ou-acheter-replique-france",
+  "meilleur-site-replique-france",
+  "replique-sac-luxe-qualite",
+  "yupoo-louis-vuitton",
+  "yupoo-chanel",
+  "replica-france-livraison",
+  "sac-louis-vuitton-pas-cher",
+  "copie-hermes-birkin",
+] as const;
+
+const PURGED = new Set<string>(SEO_PURGED_SLUGS);
+
+function dedupeBySlug(pages: SeoPage[]): SeoPage[] {
+  const seen = new Set<string>();
+  const out: SeoPage[] = [];
+  for (const p of pages) {
+    if (PURGED.has(p.slug) || seen.has(p.slug)) continue;
+    seen.add(p.slug);
+    out.push(p);
+  }
+  return out;
+}
+
+export const SEO_PAGES: SeoPage[] = dedupeBySlug([
   ...SEO_MIDTAIL_BATCH,
   ...SEO_LONGTAIL_BATCH,
   ...SEO_PAGES_CORE,
@@ -1689,7 +1775,7 @@ export const SEO_PAGES: SeoPage[] = [
   ...(SEO_GREY_BATCH as SeoPage[]),
   ...(SEO_IDEAS_50_BATCH as SeoPage[]),
   ...SEO_AUTH_ID_BATCH,
-];
+]);
 
 export function pagesByLocale(locale: string): SeoPage[] {
   return SEO_PAGES.filter((p) => p.locale === locale);

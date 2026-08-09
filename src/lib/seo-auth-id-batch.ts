@@ -19,22 +19,7 @@ export const SEO_AUTH_ID_BATCH: SeoPage[] = [
     ],
     related: ["identifier-neverfull-photo","vrai-ou-faux-neverfull","identifier-modele-sac"],
   },
-  {
-    slug: "identifier-neverfull-photo",
-    title: "Identifier un Neverfull Louis Vuitton sur photo",
-    h1: "Identifier un Neverfull à partir d’une photo",
-    description: "Quel modèle est ce Neverfull Louis Vuitton ? Angles utiles, détails à viser, puis analyse photo LuxeFinder.",
-    intent: "howto" as const,
-    brands: ["louis-vuitton"],
-    intro: "Mal nommer un Neverfull fausse toute recherche d’occasion. Voici comment préparer une photo exploitable, puis laisser LuxeFinder proposer une identification.",
-    sections: [
-      { h2: "Angles qui comptent", body: "Face, profil, ouvert (intérieur), hardware, et une vue nette de la matière. Lumière naturelle, sans filtre agressif." },
-      { h2: "Signaux Neverfull", body: "Silhouette, anses, fermoir, proportions, toile ou cuir typiques du Neverfull. Notez la taille approximative (ex. cm de base) si vous la connaissez." },
-      { h2: "Passer dans LuxeFinder", body: "Uploadez la photo : l’app propose un cadrage modèle pour comparer des offres d’occasion / vendeurs — pas des catalogues de répliques." },
-      { h2: "Ensuite", body: "Une fois le modèle nommé, croisez avec un guide « vrai ou faux » et exigez des photos récentes au vendeur." },
-    ],
-    related: ["reconnaitre-faux-neverfull","vrai-ou-faux-neverfull","identifier-modele-sac"],
-  },
+
   {
     slug: "vrai-ou-faux-neverfull",
     title: "Neverfull Louis Vuitton : vrai ou faux ? Checklist",
@@ -163,22 +148,7 @@ export const SEO_AUTH_ID_BATCH: SeoPage[] = [
     ],
     related: ["identifier-birkin-photo","vrai-ou-faux-birkin","identifier-modele-sac"],
   },
-  {
-    slug: "identifier-birkin-photo",
-    title: "Identifier un Birkin Hermès sur photo",
-    h1: "Identifier un Birkin à partir d’une photo",
-    description: "Quel modèle est ce Birkin Hermès ? Angles utiles, détails à viser, puis analyse photo LuxeFinder.",
-    intent: "howto" as const,
-    brands: ["hermes"],
-    intro: "Mal nommer un Birkin fausse toute recherche d’occasion. Voici comment préparer une photo exploitable, puis laisser LuxeFinder proposer une identification.",
-    sections: [
-      { h2: "Angles qui comptent", body: "Face, profil, ouvert (intérieur), hardware, et une vue nette de la matière. Lumière naturelle, sans filtre agressif." },
-      { h2: "Signaux Birkin", body: "Silhouette, anses, fermoir, proportions, toile ou cuir typiques du Birkin. Notez la taille approximative (ex. cm de base) si vous la connaissez." },
-      { h2: "Passer dans LuxeFinder", body: "Uploadez la photo : l’app propose un cadrage modèle pour comparer des offres d’occasion / vendeurs — pas des catalogues de répliques." },
-      { h2: "Ensuite", body: "Une fois le modèle nommé, croisez avec un guide « vrai ou faux » et exigez des photos récentes au vendeur." },
-    ],
-    related: ["reconnaitre-faux-birkin","vrai-ou-faux-birkin","identifier-modele-sac"],
-  },
+
   {
     slug: "vrai-ou-faux-birkin",
     title: "Birkin Hermès : vrai ou faux ? Checklist",
@@ -307,22 +277,7 @@ export const SEO_AUTH_ID_BATCH: SeoPage[] = [
     ],
     related: ["identifier-classic-flap-photo","vrai-ou-faux-classic-flap","identifier-modele-sac"],
   },
-  {
-    slug: "identifier-classic-flap-photo",
-    title: "Identifier un Classic Flap Chanel sur photo",
-    h1: "Identifier un Classic Flap à partir d’une photo",
-    description: "Quel modèle est ce Classic Flap Chanel ? Angles utiles, détails à viser, puis analyse photo LuxeFinder.",
-    intent: "howto" as const,
-    brands: ["chanel"],
-    intro: "Mal nommer un Classic Flap fausse toute recherche d’occasion. Voici comment préparer une photo exploitable, puis laisser LuxeFinder proposer une identification.",
-    sections: [
-      { h2: "Angles qui comptent", body: "Face, profil, ouvert (intérieur), hardware, et une vue nette de la matière. Lumière naturelle, sans filtre agressif." },
-      { h2: "Signaux Classic Flap", body: "Silhouette, anses, fermoir, proportions, toile ou cuir typiques du Classic Flap. Notez la taille approximative (ex. cm de base) si vous la connaissez." },
-      { h2: "Passer dans LuxeFinder", body: "Uploadez la photo : l’app propose un cadrage modèle pour comparer des offres d’occasion / vendeurs — pas des catalogues de répliques." },
-      { h2: "Ensuite", body: "Une fois le modèle nommé, croisez avec un guide « vrai ou faux » et exigez des photos récentes au vendeur." },
-    ],
-    related: ["reconnaitre-faux-classic-flap","vrai-ou-faux-classic-flap","identifier-modele-sac"],
-  },
+
   {
     slug: "vrai-ou-faux-classic-flap",
     title: "Classic Flap Chanel : vrai ou faux ? Checklist",

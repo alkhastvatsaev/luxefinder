@@ -279,7 +279,7 @@ export default function HomeCoverflow({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={previewUrl!}
-                      alt=""
+                      alt="Photo importée pour identification"
                       draggable={false}
                       className={cn(
                         "pointer-events-none absolute inset-0 h-full w-full object-cover",
@@ -464,9 +464,11 @@ export default function HomeCoverflow({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.src}
-                    alt=""
+                    alt={item.alt || "Lunettes de soleil luxe"}
                     className="pointer-events-none h-full w-full object-cover"
                     draggable={false}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ))}
@@ -505,9 +507,11 @@ export default function HomeCoverflow({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={item.src}
-                    alt=""
+                    alt={item.alt || "Bijou de luxe"}
                     className="pointer-events-none h-full w-full object-cover"
                     draggable={false}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ))}
@@ -545,9 +549,11 @@ export default function HomeCoverflow({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={bag.src}
-                    alt=""
+                    alt={bag.alt || "Sac de luxe"}
                     className="pointer-events-none h-full w-full object-cover"
                     draggable={false}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
               ))}
@@ -556,7 +562,16 @@ export default function HomeCoverflow({
         </div>
       )}
 
-      <ImageLightbox src={previewImage} onClose={closePreview} />
+      <ImageLightbox
+        src={previewImage}
+        alt={
+          previewImage
+            ? [...trackBags, ...midTrackItems, ...topTrackItems].find((s) => s.src === previewImage)
+                ?.alt || "Aperçu produit luxe"
+            : ""
+        }
+        onClose={closePreview}
+      />
     </main>
   );
 }

@@ -13,30 +13,32 @@ export type SacModelPage = {
 
 export const SAC_MODEL_PAGES: SacModelPage[] = [
   {
-    brand: "louis-vuitton",
-    model: "neverfull",
-    name: "Neverfull",
-    h1: "Louis Vuitton Neverfull — identifier et trouver une offre",
-    description:
-      "Neverfull MM/GM : repères modèle, tailles, et comment LuxeFinder trouve des vendeurs selon votre budget.",
-    intro:
-      "Le Neverfull est l’un des sacs les plus cherchés. Avant de comparer des offres, confirmez la taille (PM/MM/GM), la toile et le coloris intérieur.",
-    sections: [
-      {
-        h2: "Repères visuels",
-        body: "Silhouette cabas trapèze, anses cuir, coins renforcés, pochette intérieure souvent présente selon génération. Notez la toile (Monogram, Damier, Empreinte).",
-      },
-      {
-        h2: "Budget",
-        body: "Fixez une fourchette avant de contacter. Les écarts de prix reflètent souvent l’état, la génération ou la qualité annoncée — exigez des photos du lot.",
-      },
-      {
-        h2: "Avec LuxeFinder",
-        body: "Uploadez une photo de Neverfull et votre budget : l’app oriente la recherche de vendeurs compatibles.",
-      },
-    ],
-    relatedGuideSlugs: ["louis-vuitton", "neverfull", "budget-sac-luxe"],
-  },
+  brand: "louis-vuitton",
+  model: "neverfull",
+  name: "Neverfull",
+  h1: "Louis Vuitton Neverfull — identification et offres",
+  description: "Neverfull PM/MM/GM : tailles, points de contrôle occasion, budget et méthode pour trouver des vendeurs.",
+  intro: "Le Neverfull est partout en occasion. La taille (PM/MM/GM) et l’état des coins / poignées décident du prix autant que la toile.",
+  sections: [
+    {
+      h2: "Tailles et usage",
+      body: "PM plus compacte, MM polyvalente, GM très capacitaire. Mesurez la base ou demandez les cm au vendeur. Une erreur de taille rend l’usage quotidien décevant. Confirmez aussi la présence ou non de pochette intérieure selon les versions. Notez toile et coloris avant de comparer des annonces.",
+    },
+    {
+      h2: "Contrôles photo",
+      body: "Alignement monogram, coins, poignées Vachetta (patine vs rougeur anormale), rivets, intérieur. Exigez face, profil, coins, intérieur. Une seule photo face est insuffisante. Demandez des macros datées du lot réel.",
+    },
+    {
+      h2: "Budget",
+      body: "Ancrez sur des annonces équivalentes (même taille/toile/état). Méfiez-vous des « neuf » à prix cassé sans historique. Incluez livraison dans le plafond. Un écart extrême sans défaut documenté = stop.",
+    },
+    {
+      h2: "Recherche LuxeFinder",
+      body: "Photo du Neverfull + budget → pistes. Vérifiez ensuite hors app. Contenu informatif, sans affiliation LV. Enchaînez sur la grille anti-arnaque avant paiement.",
+    },
+  ],
+  relatedGuideSlugs: ["louis-vuitton","identifier-modele-sac","budget-sac-luxe"],
+},
   {
     brand: "louis-vuitton",
     model: "alma",
@@ -66,19 +68,32 @@ export const SAC_MODEL_PAGES: SacModelPage[] = [
     relatedGuideSlugs: ["speedy", "tailles-sacs-luxe", "louis-vuitton"],
   },
   {
-    brand: "hermes",
-    model: "birkin",
-    name: "Birkin",
-    h1: "Hermès Birkin — identification et recherche d’offres",
-    description: "Birkin : tailles, cuirs, et méthode LuxeFinder pour trouver des vendeurs selon budget.",
-    intro: "Le Birkin se définit par taille, cuir et quincaillerie. Sans ces trois infos, les offres ne sont pas comparables.",
-    sections: [
-      { h2: "Taille & cuir", body: "25/30/35… et type de cuir changent radicalement le prix. Exigez ces infos par écrit." },
-      { h2: "Contrôles", body: "Coutures sellier, symétrie, clous, fermoir. Photos macro indispensables." },
-      { h2: "LuxeFinder", body: "Déposez une photo pour cadrer le modèle, puis filtrez par budget." },
-    ],
-    relatedGuideSlugs: ["hermes", "birkin", "authentifier-sac-luxe"],
-  },
+  brand: "hermes",
+  model: "birkin",
+  name: "Birkin",
+  h1: "Hermès Birkin — identification et recherche d’offres",
+  description: "Birkin : tailles, cuirs, hardware, méthode pour cadrer un budget et trouver des vendeurs sérieux.",
+  intro: "La Birkin se juge sur la cohérence globale : taille, cuir, couture, ferrures. Une seule belle photo ne suffit pas pour un engagement financier élevé.",
+  sections: [
+    {
+      h2: "Tailles courantes",
+      body: "25, 30, 35 (et autres). La taille change le prix et le confort. Confirmez les cm et le cuir annoncé. Gold vs palladium, couleur et rareté déplacent la cote. Traitez chaque combinaison comme un brief distinct.",
+    },
+    {
+      h2: "Points de contrôle",
+      body: "Couture, clous, poignées, stamp, symétrie, grain. Demandez macros et, pour les montants élevés, une expertise indépendante avant paiement final. Photos catalogue seules = insuffisant. Documentez chaque réponse vendeur par écrit.",
+    },
+    {
+      h2: "Budget et risques",
+      body: "Cote selon couleur/rareté/état. Prix « trop beaux » = stop. Incluez expertise + envoi sécurisé dans le plafond. Ancrez-vous sur des comparables documentés. Ne précipitez jamais un paiement Hermès sur un dossier incomplet.",
+    },
+    {
+      h2: "Avec LuxeFinder",
+      body: "Cadrez le modèle sur photo, fixez un budget, explorez des pistes, puis appliquez la grille anti-arnaque. Pas un certificat d’authenticité. Contenu informatif, sans affiliation Hermès.",
+    },
+  ],
+  relatedGuideSlugs: ["hermes","eviter-arnaques-vendeurs","authentifier-sac-luxe"],
+},
   {
     brand: "hermes",
     model: "kelly",
@@ -94,19 +109,32 @@ export const SAC_MODEL_PAGES: SacModelPage[] = [
     relatedGuideSlugs: ["kelly", "hermes", "comparer-offres-vendeurs"],
   },
   {
-    brand: "chanel",
-    model: "classic-flap",
-    name: "Classic Flap",
-    h1: "Chanel Classic Flap — identifier et trouver une offre",
-    description: "Classic Flap medium/small : matelassé, chaîne, recherche vendeur LuxeFinder.",
-    intro: "Matelassé diamant, fermoir CC et chaîne culottée cuir sont les signaux Classic Flap. Précisez la taille.",
-    sections: [
-      { h2: "Repères", body: "Matelassé régulier, logo CC, chaîne entrelacée. Vérifiez l’intérieur et le numéro de série selon génération." },
-      { h2: "Offres", body: "Comparez prix + photos lot. Méfiez-vous des catalogues génériques." },
-      { h2: "LuxeFinder", body: "Uploadez une photo pour démarrer la short-list vendeurs." },
-    ],
-    relatedGuideSlugs: ["chanel", "classic-flap", "trouver-vendeur-sac-luxe"],
-  },
+  brand: "chanel",
+  model: "classic-flap",
+  name: "Classic Flap",
+  h1: "Chanel Classic Flap — identification et offres",
+  description: "Classic Flap : tailles, matelassé, chaîne, budget occasion et méthode vendeurs.",
+  intro: "Le Classic Flap est immédiatement lisible — et massivement imité. Matelassé et chaîne se contrôlent au zoom avant toute discussion de prix.",
+  sections: [
+    {
+      h2: "Repères de modèle",
+      body: "Taille, caviar vs lambskin, hardware doré/argenté, génération. Notez ces attributs dans votre brief vendeur. Sans ces détails, les comparables de prix n’ont pas de sens. Séparez clairement Classic Flap des lignes proches (Boy, 19, etc.).",
+    },
+    {
+      h2: "QC photo",
+      body: "Alignement losanges, gravure CC, attache chaîne, coins, intérieur, stickers/série selon époque. Une photo unique lifestyle est insuffisante. Exigez macros et photos datées du lot. Les coins usés se négocient : documentez-les.",
+    },
+    {
+      h2: "Budget",
+      body: "Comparez des annonces équivalentes. L’état des coins et de la chaîne pèse lourd sur le prix occasion. Incluez livraison dans le total rendu. Écart extrême sans explication = stop.",
+    },
+    {
+      h2: "Parcours app",
+      body: "Photo + budget sur LuxeFinder, puis short-list et vérifications écrites. Contenu informatif, sans affiliation Chanel. La vérification d’authenticité reste externe à l’app.",
+    },
+  ],
+  relatedGuideSlugs: ["chanel","identifier-modele-sac","comparer-offres-vendeurs"],
+},
   {
     brand: "dior",
     model: "book-tote",

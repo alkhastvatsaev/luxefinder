@@ -18,10 +18,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!g) return { title: "Marque" };
   const url = `${SITE}/marques/${brand}`;
   return {
-    title: g.title,
+    title: /luxefinder/i.test(g.title) ? { absolute: g.title.includes("|") ? g.title : `${g.title} | LuxeFinder` } : g.title,
     description: g.description,
     alternates: { canonical: url },
-    openGraph: { title: g.h1, description: g.description, url, type: "article", locale: "fr_FR" },
+    openGraph: {
+      title: g.h1,
+      description: g.description,
+      url,
+      type: "article",
+      locale: "fr_FR",
+      images: [{ url: `${SITE}/og-default.jpg`, width: 1200, height: 1200, alt: g.h1 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: g.h1,
+      description: g.description,
+      images: [`${SITE}/og-default.jpg`],
+    },
   };
 }
 
@@ -41,9 +54,23 @@ export default async function MarquePage({ params }: Props) {
     mainEntityOfPage: `${SITE}/marques/${brand}`,
   };
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: SITE },
+      { "@type": "ListItem", position: 2, name: "Marques", item: `${SITE}/marques` },
+      { "@type": "ListItem", position: 3, name: g.h1, item: `${SITE}/marques/${brand}` },
+    ],
+  };
+
   return (
     <SeoShell crumb={{ href: "/marques", label: "Toutes les marques" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
       <h1 className="mt-4 text-4xl font-semibold tracking-tight md:text-5xl">{g.h1}</h1>
       <p className="mt-4 text-base text-black/60">{g.intro}</p>
       <div className="mt-8">

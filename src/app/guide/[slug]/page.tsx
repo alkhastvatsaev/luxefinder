@@ -6,6 +6,12 @@ import { SEO_PAGES, getPage, relatedPages } from "@/lib/seo-pages";
 
 type Props = { params: Promise<{ slug: string }> };
 const SITE = "https://luxefinder.app";
+const OG = {
+  url: `${SITE}/og-default.jpg`,
+  width: 1200,
+  height: 1200,
+  alt: "LuxeFinder — guides sacs de luxe",
+};
 
 export async function generateStaticParams() {
   return SEO_PAGES.map((p) => ({ slug: p.slug }));
@@ -16,8 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const g = getPage(slug);
   if (!g) return { title: "Guide" };
   const url = `${SITE}/guide/${g.slug}`;
+  const absoluteTitle = /luxefinder/i.test(g.title) ? { absolute: g.title } : g.title;
   return {
-    title: g.title,
+    title: absoluteTitle,
     description: g.description,
     alternates: { canonical: url },
     openGraph: {
@@ -26,6 +33,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url,
       locale: "fr_FR",
       type: "article",
+      images: [OG],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: g.h1,
+      description: g.description,
+      images: [OG.url],
     },
   };
 }
@@ -44,18 +58,19 @@ export default async function GuideSlugPage({ params }: Props) {
     headline: g.h1,
     description: g.description,
     inLanguage: "fr-FR",
-    author: { "@type": "Organization", name: "LuxeFinder" },
+    author: { "@type": "Organization", name: "LuxeFinder", url: SITE },
     mainEntityOfPage: url,
+    image: OG.url,
   };
 
-  const faqLd = {
+  const breadcrumbLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: g.sections.map((s) => ({
-      "@type": "Question",
-      name: s.h2,
-      acceptedAnswer: { "@type": "Answer", text: s.body },
-    })),
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: SITE },
+      { "@type": "ListItem", position: 2, name: "Guides", item: `${SITE}/guide` },
+      { "@type": "ListItem", position: 3, name: g.h1, item: url },
+    ],
   };
 
   const intentLabel =
@@ -70,7 +85,10 @@ export default async function GuideSlugPage({ params }: Props) {
   return (
     <SeoShell crumb={{ href: "/guide", label: "Tous les guides" }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
 
       <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-black/40">
         {intentLabel}

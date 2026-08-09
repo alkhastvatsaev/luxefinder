@@ -31,7 +31,7 @@ export function listPicsSlides(): Slide[] {
 
   return files.map((f, i) => ({
     src: `/pics/${f}?v=9`,
-    alt: `Article luxe ${i + 1}`,
+    alt: `Sac de luxe — exemple photo ${i + 1} pour identification LuxeFinder`,
     title: "",
   }));
 }
@@ -41,7 +41,7 @@ export function listSunglassesSlides(): Slide[] {
   const files = listImagesIn(path.join(process.cwd(), "public", "sunglasses"));
   return files.map((f, i) => ({
     src: `/sunglasses/${f}?v=5`,
-    alt: `Lunettes de soleil ${i + 1}`,
+    alt: `Lunettes de soleil de luxe — exemple ${i + 1}`,
     title: "",
   }));
 }
@@ -51,7 +51,7 @@ export function listJewelrySlides(): Slide[] {
   const files = listImagesIn(path.join(process.cwd(), "public", "jewelry"));
   return files.map((f, i) => ({
     src: `/jewelry/${f}?v=3`,
-    alt: `Bijou ${i + 1}`,
+    alt: `Bijou de luxe — exemple ${i + 1}`,
     title: "",
   }));
 }

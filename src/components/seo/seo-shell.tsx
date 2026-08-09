@@ -61,6 +61,9 @@ export function SeoShell({
         {children}
         <footer className="mt-16 border-t border-black/[0.06] pt-6 text-xs text-black/40">
           <div className="flex flex-wrap gap-4">
+            <Link href="/a-propos" className="hover:text-black/70">
+              À propos
+            </Link>
             <Link href="/mentions-legales" className="hover:text-black/70">
               Mentions légales
             </Link>

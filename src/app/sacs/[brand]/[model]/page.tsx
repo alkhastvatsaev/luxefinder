@@ -21,7 +21,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: m.h1,
     description: m.description,
     alternates: { canonical: url },
-    openGraph: { title: m.h1, description: m.description, url, type: "article", locale: "fr_FR" },
+    openGraph: {
+      title: m.h1,
+      description: m.description,
+      url,
+      type: "article",
+      locale: "fr_FR",
+      images: [{ url: `${SITE}/og-default.jpg`, width: 1200, height: 1200, alt: m.h1 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: m.h1,
+      description: m.description,
+      images: [`${SITE}/og-default.jpg`],
+    },
   };
 }
 
@@ -41,20 +54,33 @@ export default async function SacModelPage({ params }: Props) {
     mainEntityOfPage: `${SITE}/sacs/${brand}/${model}`,
   };
 
-  const faqLd = {
+  const breadcrumbLd = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: m.sections.map((s) => ({
-      "@type": "Question",
-      name: s.h2,
-      acceptedAnswer: { "@type": "Answer", text: s.body },
-    })),
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Accueil", item: SITE },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: brandGuide?.h1 || brand,
+        item: `${SITE}/marques/${brand}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: m.name,
+        item: `${SITE}/sacs/${brand}/${model}`,
+      },
+    ],
   };
 
   return (
     <SeoShell crumb={{ href: `/marques/${brand}`, label: brandGuide?.h1 || brand }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
 
       <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-black/40">
         Modèle · {m.name}
