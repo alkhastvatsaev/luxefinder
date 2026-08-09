@@ -1,4 +1,4 @@
-import { put, list } from "@vercel/blob";
+import { put, get } from "@vercel/blob";
 
 export type Outreach = {
   id: number;
@@ -53,13 +53,19 @@ function token(): string {
   return Buffer.from(bytes).toString("base64url");
 }
 
+/**
+ * Identifiant non devinable (52 bits d'entropie, sous Number.MAX_SAFE_INTEGER).
+ * L'ancienne version (`Date.now() * 1000 + Math.random() * 1000`) ne laissait que
+ * 1000 candidats par milliseconde et rendait les enregistrements énumérables.
+ */
 function newId(): number {
-  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+  const parts = crypto.getRandomValues(new Uint32Array(2));
+  return parts[0] * 0x100000 + (parts[1] >>> 12);
 }
 
 async function putJson(pathname: string, data: unknown) {
   await put(pathname, JSON.stringify(data), {
-    access: "public",
+    access: "private",
     contentType: "application/json",
     addRandomSuffix: false,
     allowOverwrite: true,
@@ -67,12 +73,13 @@ async function putJson(pathname: string, data: unknown) {
 }
 
 async function getJson<T>(pathname: string): Promise<T | null> {
-  const { blobs } = await list({ prefix: pathname, limit: 1 });
-  const hit = blobs.find((b) => b.pathname === pathname);
-  if (!hit) return null;
-  const res = await fetch(hit.url, { cache: "no-store" });
-  if (!res.ok) return null;
-  return (await res.json()) as T;
+  try {
+    const res = await get(pathname, { access: "private", useCache: false });
+    if (!res || res.statusCode !== 200) return null;
+    return (await new Response(res.stream).json()) as T;
+  } catch {
+    return null;
+  }
 }
 
 export async function saveRfq(rfq: Rfq): Promise<void> {
@@ -144,7 +151,7 @@ export function createDraft(photoUrl: string, ai: Record<string, unknown>): Rfq 
 
 export function makeSupplierSlots(count = 10): Outreach[] {
   return Array.from({ length: count }, (_, i) => ({
-    id: newId() + i,
+    id: newId(),
     phone: `pending-${i + 1}`,
     supplier_token: token(),
     wa_status: "queued",

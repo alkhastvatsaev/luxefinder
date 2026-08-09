@@ -35,3 +35,7 @@ yarn-error.log*
 .env*
 .cache/
 .gstack/
+
+# Competitive intel corpus A (internal — never publish raw replica crawl)
+/data/intel/
+/data/intel/**

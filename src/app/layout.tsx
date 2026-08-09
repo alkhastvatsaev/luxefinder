@@ -49,7 +49,7 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // Pas de `maximumScale` : bloquer le zoom échoue à WCAG 2.2 (1.4.4 et 1.4.10).
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

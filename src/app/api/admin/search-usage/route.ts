@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { getMonthUsage, getYesterdayCost } from "@/lib/search/telemetry";
 import {
   getGlobalCreditsUsed,
@@ -10,13 +11,21 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * Le jeton n'est accepté que dans l'en-tête `Authorization: Bearer`.
+ * L'ancienne version acceptait aussi `?token=` : un secret en query string finit
+ * dans les logs Vercel, l'historique du navigateur et l'en-tête `Referer`.
+ * La comparaison est à temps constant.
+ */
 function authorized(req: NextRequest): boolean {
   const token = (process.env.SEARCH_ADMIN_TOKEN || "").trim();
   if (!token) return false;
   const hdr = req.headers.get("authorization") || "";
-  const bearer = hdr.startsWith("Bearer ") ? hdr.slice(7).trim() : "";
-  const q = req.nextUrl.searchParams.get("token") || "";
-  return bearer === token || q === token;
+  if (!hdr.startsWith("Bearer ")) return false;
+  const presented = Buffer.from(hdr.slice(7).trim());
+  const expected = Buffer.from(token);
+  if (presented.length !== expected.length) return false;
+  return timingSafeEqual(presented, expected);
 }
 
 export async function GET(req: NextRequest) {

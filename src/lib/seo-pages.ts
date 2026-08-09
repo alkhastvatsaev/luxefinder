@@ -1,5 +1,6 @@
 /** LuxeFinder — all SEO guide pages (intent + brand + model + buy). */
 
+import { SEO_AUTH_ID_BATCH } from "./seo-auth-id-batch";
 import { SEO_EU_BATCH } from "./seo-eu-batch";
 import { SEO_GREY_BATCH } from "./seo-grey-batch";
 import { SEO_IDEAS_50_BATCH } from "./seo-ideas-50-batch";
@@ -1687,6 +1688,7 @@ export const SEO_PAGES: SeoPage[] = [
   ...(SEO_EU_BATCH as SeoPage[]),
   ...(SEO_GREY_BATCH as SeoPage[]),
   ...(SEO_IDEAS_50_BATCH as SeoPage[]),
+  ...SEO_AUTH_ID_BATCH,
 ];
 
 export function pagesByLocale(locale: string): SeoPage[] {
