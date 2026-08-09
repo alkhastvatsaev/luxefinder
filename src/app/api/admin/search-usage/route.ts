@@ -51,7 +51,11 @@ export async function GET(req: NextRequest) {
       gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY),
       ebay: Boolean(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET),
       serper: Boolean(process.env.SERPER_API_KEY),
-      serp: Boolean(process.env.SERPAPI_API_KEY || process.env.SERP_API_KEY),
+      serp: Boolean(
+        process.env.SERPAPI_KEY ||
+          process.env.SERPAPI_API_KEY ||
+          process.env.SERP_API_KEY
+      ),
     },
   });
 }
