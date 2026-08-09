@@ -29,12 +29,7 @@ function openaiKey(): string {
 }
 
 function geminiKey(): string {
-  return (
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_GEMINI_API_KEY ||
-    process.env.GOOGLE_VISION_API_KEY ||
-    ""
-  ).trim();
+  return (process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY || "").trim();
 }
 
 /**
@@ -44,7 +39,12 @@ function geminiKey(): string {
 export async function synthesizeLuxuryProduct(
   signals: VisionSignals,
   resolved: ResolvedLuxury,
-  opts?: { imageBytes?: ArrayBuffer; contentType?: string }
+  opts?: {
+    imageBytes?: ArrayBuffer;
+    contentType?: string;
+    /** When false, skip Gemini path (cap/fallback). Default true. */
+    allowGemini?: boolean;
+  }
 ): Promise<SynthesizedProduct | null> {
   const pageTitles = signals.pages
     .slice(0, 12)
@@ -124,8 +124,10 @@ Règles:
     }
   }
 
-  const gk = geminiKey();
+  const allowGemini = opts?.allowGemini !== false;
+  const gk = allowGemini ? geminiKey() : "";
   if (gk) {
+    const t0 = Date.now();
     try {
       const parts: Array<Record<string, unknown>> = [{ text: prompt }];
       if (thinWeb && opts?.imageBytes) {
@@ -136,8 +138,9 @@ Règles:
           },
         });
       }
+      const model = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(gk)}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(gk)}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,11 +155,53 @@ Règles:
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) {
           const parsed = JSON.parse(text);
-          return normalizeSynth(parsed, signals, resolved, thinWeb ? "vision+kb+gemini-vision" : "vision+kb+gemini");
+          const { logExternalCall } = await import("./search/telemetry");
+          await logExternalCall({
+            ts: new Date().toISOString(),
+            provider: "gemini",
+            action: "identify",
+            credits: 1,
+            latency_ms: Date.now() - t0,
+            cache: "miss",
+            ok: true,
+            detail: "synthesize",
+          });
+          return normalizeSynth(
+            parsed,
+            signals,
+            resolved,
+            thinWeb ? "vision+kb+gemini-vision" : "vision+kb+gemini"
+          );
         }
       }
+      const { logExternalCall } = await import("./search/telemetry");
+      await logExternalCall({
+        ts: new Date().toISOString(),
+        provider: "gemini",
+        action: "identify",
+        credits: 1,
+        latency_ms: Date.now() - t0,
+        cache: "miss",
+        ok: false,
+        detail: `synthesize http ${r.status}`,
+      });
     } catch (e) {
       console.error("gemini synthesize failed", e);
+      try {
+        const { logExternalCall } = await import("./search/telemetry");
+        await logExternalCall({
+          ts: new Date().toISOString(),
+          provider: "gemini",
+          action: "identify",
+          credits: 1,
+          latency_ms: Date.now() - t0,
+          cache: "miss",
+          ok: false,
+          detail: e instanceof Error ? e.message : "synthesize error",
+        });
+      } catch {
+        /* ignore */
+      }
     }
   }
 

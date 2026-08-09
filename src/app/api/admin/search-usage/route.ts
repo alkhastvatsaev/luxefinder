@@ -46,9 +46,12 @@ export async function GET(req: NextRequest) {
       session_daily: sessionDailyCap(),
       ip_per_minute: ipPerMinuteCap(),
     },
-    flags: {
+      flags: {
       serp_fallback: (process.env.SEARCH_SERP_FALLBACK || "true").toLowerCase() !== "false",
       gemini: Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY),
+      gemini_grounding: process.env.GEMINI_GROUNDING || "auto",
+      vision_enrich_on_hit:
+        (process.env.VISION_ENRICH_ON_HIT || "").toLowerCase() === "true",
       ebay: Boolean(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET),
       serper: Boolean(process.env.SERPER_API_KEY),
       serp: Boolean(

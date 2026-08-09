@@ -208,8 +208,12 @@ export async function analyzeImage(
 
   if (fromSearch) {
     const base = toAiDescription(identified);
-    // Optional Vision enrichment for material / color
-    if (hasGoogleVisionKey()) {
+    // Skip Vision by default when identity is already strong (saves Vision units).
+    // Opt-in: VISION_ENRICH_ON_HIT=true
+    const enrich =
+      (process.env.VISION_ENRICH_ON_HIT || "").toLowerCase() === "true" &&
+      hasGoogleVisionKey();
+    if (enrich) {
       try {
         const signals = await extractVisionSignals(bytes);
         return {
@@ -319,6 +323,8 @@ export async function analyzeImage(
       (await synthesizeLuxuryProduct(signals, resolved, {
         imageBytes: bytes,
         contentType,
+        // Cap/fallback must not burn Gemini synthesize
+        allowGemini: !forceFallback,
       })) || fromResolvedOnly(signals, resolved);
 
     return {
@@ -354,7 +360,7 @@ export async function handleAnalyze(file: File, opts?: { searchMode?: SearchMode
     cached &&
     cached.brand &&
     (!hasSerpApiKey() || (Array.isArray(cached.match_links) && (cached.match_links as unknown[]).length > 0) || cached.provider);
-  if (cacheOk && cached && opts?.searchMode !== "fallback") {
+  if (cacheOk && cached) {
     console.log("[analyze] full cache HIT via", hit!.via);
     const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
     const row = createDraft(photoUrl, { ...cached, cached: true, cache_via: hit!.via });
@@ -378,10 +384,8 @@ export async function handleAnalyze(file: File, opts?: { searchMode?: SearchMode
     cacheKey: fp,
     searchMode: opts?.searchMode,
   });
-  if (opts?.searchMode !== "fallback") {
-    await setCachedAnalyzeSmart(buf, ai);
-    console.log("[analyze] full cache MISS → stored");
-  }
+  await setCachedAnalyzeSmart(buf, ai);
+  console.log("[analyze] full cache MISS → stored");
   const row = createDraft(photoUrl, ai);
   await saveRfq(row);
   void rememberProduct(ai, photoUrl).catch(() => {});
@@ -444,8 +448,17 @@ export async function handleTextSearch(
 
   const ai = toAiDescription(identified);
   const searchTitle = identified.product.display_name;
+  // Skip Serp thumbnail when catalogue / Gemini already gave a solid identity
+  const needThumb =
+    opts?.searchMode !== "fallback" &&
+    !(
+      identified.provider === "catalog" ||
+      identified.provider === "living_catalog" ||
+      identified.provider === "gemini" ||
+      (identified.product.confidence >= 0.7 && isStrongModelName(identified.product.model))
+    );
   let thumbnail = "";
-  if (opts?.searchMode !== "fallback") {
+  if (needThumb) {
     thumbnail = await serpThumbnail(searchTitle);
   }
   if (thumbnail) ai.product_image = thumbnail;
