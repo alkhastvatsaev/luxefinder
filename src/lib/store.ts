@@ -1,4 +1,17 @@
-import { put, get } from "@vercel/blob";
+import { put, get, list } from "@vercel/blob";
+
+/**
+ * Le store Vercel Blob du projet est aujourd’hui **public**
+ * (`*.public.blob.vercel-storage.com`). `access: "private"` y échoue avec :
+ * "Cannot use private access on a public store".
+ *
+ * Pour activer le mode privé (ADR-0001) : créer un store Blob privé dans Vercel
+ * et définir `BLOB_ACCESS_MODE=private` (+ token du store privé).
+ */
+type BlobAccess = "public" | "private";
+function blobAccess(): BlobAccess {
+  return process.env.BLOB_ACCESS_MODE === "private" ? "private" : "public";
+}
 
 export type Outreach = {
   id: number;
@@ -65,7 +78,7 @@ function newId(): number {
 
 async function putJson(pathname: string, data: unknown) {
   await put(pathname, JSON.stringify(data), {
-    access: "private",
+    access: blobAccess(),
     contentType: "application/json",
     addRandomSuffix: false,
     allowOverwrite: true,
@@ -74,9 +87,18 @@ async function putJson(pathname: string, data: unknown) {
 
 async function getJson<T>(pathname: string): Promise<T | null> {
   try {
-    const res = await get(pathname, { access: "private", useCache: false });
-    if (!res || res.statusCode !== 200) return null;
-    return (await new Response(res.stream).json()) as T;
+    if (blobAccess() === "private") {
+      const res = await get(pathname, { access: "private", useCache: false });
+      if (!res || res.statusCode !== 200) return null;
+      return (await new Response(res.stream).json()) as T;
+    }
+    // Store public : lecture via URL listée (pas d’API get privée).
+    const { blobs } = await list({ prefix: pathname, limit: 1 });
+    const hit = blobs.find((b) => b.pathname === pathname);
+    if (!hit) return null;
+    const res = await fetch(hit.url, { cache: "no-store" });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
   } catch {
     return null;
   }
