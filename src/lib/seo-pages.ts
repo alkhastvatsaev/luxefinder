@@ -1,5 +1,8 @@
 /** LuxeFinder — all SEO guide pages (intent + brand + model + buy). */
 
+import { SEO_EU_BATCH } from "./seo-eu-batch";
+import { SEO_GREY_BATCH } from "./seo-grey-batch";
+import { SEO_IDEAS_50_BATCH } from "./seo-ideas-50-batch";
 import { SEO_LONGTAIL_BATCH } from "./seo-longtail-batch";
 import { SEO_MIDTAIL_BATCH } from "./seo-midtail-batch";
 
@@ -15,6 +18,8 @@ export type SeoPage = {
   sections: PageSection[];
   brands?: string[];
   related: string[];
+  /** ISO-ish locale for EU batch pages (fr, de, it, …). */
+  locale?: string;
 };
 
 const SEO_PAGES_CORE: SeoPage[] = [
@@ -1675,7 +1680,30 @@ const SEO_PAGES_CORE: SeoPage[] = [
   },
 ];
 
-export const SEO_PAGES: SeoPage[] = [...SEO_MIDTAIL_BATCH, ...SEO_LONGTAIL_BATCH, ...SEO_PAGES_CORE];
+export const SEO_PAGES: SeoPage[] = [
+  ...SEO_MIDTAIL_BATCH,
+  ...SEO_LONGTAIL_BATCH,
+  ...SEO_PAGES_CORE,
+  ...(SEO_EU_BATCH as SeoPage[]),
+  ...(SEO_GREY_BATCH as SeoPage[]),
+  ...(SEO_IDEAS_50_BATCH as SeoPage[]),
+];
+
+export function pagesByLocale(locale: string): SeoPage[] {
+  return SEO_PAGES.filter((p) => p.locale === locale);
+}
+
+/** Grey-zone legal batch only (budget / alternative / pas cher / …). */
+export function pagesGreyZone(): SeoPage[] {
+  return SEO_PAGES.filter((p) => p.slug.startsWith("gz-"));
+}
+
+/** 50 idées SEO FR (comparatifs, cotes, ID photo, bijoux/lunettes, geo). */
+export function pagesIdeas50(): SeoPage[] {
+  return SEO_PAGES.filter((p) =>
+    (SEO_IDEAS_50_BATCH as SeoPage[]).some((x) => x.slug === p.slug),
+  );
+}
 
 export function getPage(slug: string): SeoPage | undefined {
   return SEO_PAGES.find((p) => p.slug === slug);

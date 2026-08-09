@@ -115,6 +115,15 @@ Modèles `/sacs` ajoutés : pochette-metis, speedy-25, boy, jodie, baguette, lug
 - Textile : `/vetements/[brand]/[line]` (à activer après sacs)  
 - Clusters occasion / authentification / entretien  
 
+## Batch EU 600 (shippé 2026-08-09)
+
+Voir [`2026-08-09_EU_600_PAGES.md`](./2026-08-09_EU_600_PAGES.md).
+
+- 15 marchés × 8 intents × 5 maisons = **600** pages `/guide/eu-{lang}-…`
+- Hubs `/guide/eu/[lang]`
+- IndexNow : 777 URLs soumises (200 OK)
+- Cadre : vendeur / photo / budget / offres / occasion / authenticité / tailles / arnaques — **pas** contrefaçon
+
 ---
 
 ## Maillage

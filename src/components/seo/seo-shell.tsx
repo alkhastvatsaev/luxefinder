@@ -37,6 +37,9 @@ export function SeoShell({
             LuxeFinder
           </Link>
           <nav className="flex items-center gap-4 text-xs font-medium text-black/55">
+            <Link href="/articles" className="hover:text-black">
+              Articles
+            </Link>
             <Link href="/guide" className="hover:text-black">
               Guides
             </Link>

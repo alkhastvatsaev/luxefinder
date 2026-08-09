@@ -9,7 +9,10 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/confirm/", "/s/", "/r/", "/offres/"],
       },
     ],
-    sitemap: "https://luxefinder.app/sitemap.xml",
+    sitemap: [
+      "https://luxefinder.app/sitemap.xml",
+      "https://luxefinder.app/image-sitemap.xml",
+    ],
     host: "https://luxefinder.app",
   };
 }
