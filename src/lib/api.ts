@@ -52,6 +52,8 @@ export type AiDescription = {
   product_name?: string;
   match_links?: MatchLink[];
   lens_title?: string;
+  grounding_sources?: Array<{ title: string; url?: string }>;
+  product_image?: string;
 };
 
 export const luxefinderApi = {
@@ -137,12 +139,16 @@ export const luxefinderApi = {
         thumbnail?: string;
         region: "usa" | "europe" | "asia" | "africa";
         country: string;
-        kind: "official" | "resale" | "shopping" | "other";
+        kind: "official" | "resale" | "shopping" | "deeplink" | "marketplace" | "other";
+        provider?: string;
       }>;
       by_region: Record<"usa" | "europe" | "asia" | "africa", number>;
       markets_ok: number;
       markets_total: number;
       cached?: boolean;
+      fallback?: boolean;
+      provider?: string;
+      providers_used?: string[];
     }>(`/r/${token}/offers`, { method: "POST" }),
   client: (token: string) => api<Record<string, unknown>>(`/r/${token}`),
   supplier: (token: string) => api<Record<string, unknown>>(`/s/${token}`),

@@ -18,18 +18,24 @@ import {
 } from "./google-vision";
 import { resolveLuxuryProduct, type VisionSignals } from "./luxury-resolve";
 import { fromResolvedOnly, synthesizeLuxuryProduct } from "./synthesize-product";
-import { fetchGoogleLensByUrl, hasSerpApiKey, rankMatchLinks, bestLensTitle, parseTitleBrandModel } from "./google-lens";
-import { fetchGoogleShoppingProducts, fetchProductThumbnail } from "./google-text-search";
-import { searchGlobalOffers } from "./global-offers";
-import { significantQueryTokens, normalizeText, isStrongModelName, findKnownModelInTitle } from "./luxury-kb";
+import { hasSerpApiKey, parseTitleBrandModel } from "./google-lens";
+import { isStrongModelName, findKnownModelInTitle } from "./luxury-kb";
 import {
   suggestAllModels,
   upsertCatalogProduct,
-  matchCatalogProduct,
 } from "./product-catalog";
-import { getCachedAnalyzeSmart, setCachedAnalyzeSmart, contentFingerprint, getCachedLens, setCachedLens } from "./analyze-cache";
+import { getCachedAnalyzeSmart, setCachedAnalyzeSmart, contentFingerprint } from "./analyze-cache";
 import { makeRoiCrops } from "./image-crops";
 import { hasProductSearchConfig, searchLuxuryCatalog } from "./product-search";
+import {
+  identifyProduct,
+  findOffers,
+  toAiDescription,
+  canonicalFromRfqAi,
+} from "./search";
+import { serpThumbnail } from "./search/providers/serp-adapter";
+
+export type SearchMode = "live" | "fallback";
 
 function productLine(rfq: Rfq): string {
   const id = resolveOfferIdentity(rfq);
@@ -174,33 +180,60 @@ async function openaiVisionFallback(
   }
 }
 
-/** Full luxury pipeline: Lens (primary links) + Vision + KB + LLM. */
+/** Full luxury pipeline: search facade (Gemini → Serp) + Vision enrichment. */
 export async function analyzeImage(
   bytes: ArrayBuffer,
   contentType: string,
-  opts?: { publicPhotoUrl?: string; cacheKey?: string }
+  opts?: { publicPhotoUrl?: string; cacheKey?: string; searchMode?: SearchMode }
 ): Promise<Record<string, unknown>> {
-  // Lens-first when we have a public URL + SerpAPI (exact model + shopping links)
-  let lensProducts: Awaited<ReturnType<typeof fetchGoogleLensByUrl>> = [];
-  if (hasSerpApiKey() && opts?.publicPhotoUrl) {
-    const lensKey = opts.cacheKey || (await contentFingerprint(bytes));
-    const cachedLens = await getCachedLens(lensKey);
-    if (cachedLens?.length) {
-      lensProducts = cachedLens as Awaited<ReturnType<typeof fetchGoogleLensByUrl>>;
-      console.log("[analyze] Lens cache HIT", lensKey.slice(0, 12));
-    } else {
-      lensProducts = await fetchGoogleLensByUrl(opts.publicPhotoUrl, { timeoutMs: 20_000 });
-      if (lensProducts.length) {
-        await setCachedLens(lensKey, lensProducts);
-        console.log("[analyze] Lens cache MISS → stored", lensKey.slice(0, 12));
+  const forceFallback = opts?.searchMode === "fallback";
+
+  const identified = await identifyProduct(
+    {
+      kind: "image",
+      bytes,
+      contentType,
+      publicPhotoUrl: opts?.publicPhotoUrl,
+      cacheKey: opts?.cacheKey,
+    },
+    { forceFallback }
+  );
+
+  const match_links = identified.match_links || [];
+  const lensTitle = identified.product.display_name || "";
+  const fromSearch =
+    identified.provider !== "none" &&
+    identified.product.confidence >= 0.55 &&
+    (isStrongModelName(identified.product.model) || match_links.length > 0);
+
+  if (fromSearch) {
+    const base = toAiDescription(identified);
+    // Optional Vision enrichment for material / color
+    if (hasGoogleVisionKey()) {
+      try {
+        const signals = await extractVisionSignals(bytes);
+        return {
+          ...base,
+          material:
+            (typeof base.material === "string" && base.material) ||
+            signals.labels.find((l) =>
+              /leather|canvas|suede|cuir/i.test(l.description)
+            )?.description ||
+            base.material,
+          color: signals.labels.find((l) =>
+            /black|white|brown|beige|red|blue|noir|blanc|marron/i.test(l.description)
+          )?.description,
+          category: base.category || signals.labels[0]?.description || "sac",
+        };
+      } catch {
+        return base;
       }
     }
+    return base;
   }
-  const match_links = rankMatchLinks(lensProducts, 10);
-  const lensTitle = bestLensTitle(lensProducts);
-  const parsedLens = parseTitleBrandModel(lensTitle);
 
-  if (!hasGoogleVisionKey() && !lensProducts.length) {
+  // Legacy Vision + Product Search path when search providers miss
+  if (!hasGoogleVisionKey() && !match_links.length) {
     return openaiVisionFallback(bytes, contentType);
   }
 
@@ -239,10 +272,17 @@ export async function analyzeImage(
             pages: [],
           };
 
-    if (lensProducts.length) {
+    if (match_links.length) {
       signals = {
         ...signals,
-        lensProducts: [...(signals.lensProducts || []), ...lensProducts],
+        lensProducts: [
+          ...(signals.lensProducts || []),
+          ...match_links.map((m) => ({
+            title: m.title,
+            link: m.link,
+            source: m.source,
+          })),
+        ],
         pages: [
           ...signals.pages,
           ...match_links.map((m) => ({
@@ -268,19 +308,10 @@ export async function analyzeImage(
     }
 
     const resolved = resolveLuxuryProduct(signals);
-    // Prefer Lens title for exact model when available
+    const parsedLens = parseTitleBrandModel(lensTitle);
     if (parsedLens.brand && resolved.brand === "inconnue") resolved.brand = parsedLens.brand;
     if (parsedLens.model && (!resolved.model || /^(tote|bag|handbag)/i.test(resolved.model))) {
       resolved.model = parsedLens.model;
-      resolved.candidates = [
-        {
-          brand: parsedLens.brand || resolved.brand,
-          model: parsedLens.model,
-          score: 0.92,
-          source: "google_lens",
-        },
-        ...resolved.candidates.filter((c) => c.model !== parsedLens.model).slice(0, 2),
-      ];
       resolved.confidence = Math.max(resolved.confidence, 0.9);
     }
 
@@ -290,49 +321,29 @@ export async function analyzeImage(
         contentType,
       })) || fromResolvedOnly(signals, resolved);
 
-    // Final override: Lens title wins for display model if stronger
-    if (lensTitle && (!synth.model || /^(tote|bag|handbag|sac)/i.test(synth.model))) {
-      const p = parseTitleBrandModel(lensTitle);
-      if (p.brand) synth.brand = p.brand;
-      if (p.model) synth.model = p.model;
-      synth.summary = `Identifié via Google Lens : ${lensTitle}`;
-      synth.provider = `${synth.provider}+lens`;
-      synth.confidence = Math.max(synth.confidence, 0.92);
-    }
-
     return {
       ...synth,
       product_name: [synth.brand, synth.model].filter(Boolean).join(" ").trim() || lensTitle,
-      match_links,
+      match_links: match_links.map((m, i) => ({
+        title: m.title,
+        link: m.link,
+        source: m.source,
+        kind: m.kind === "official" || m.kind === "resale" ? m.kind : "shopping",
+        rank: i + 1,
+        price: m.price,
+      })),
       lens_title: lensTitle || undefined,
-      provider: lensProducts.length ? `lens+${synth.provider}` : synth.provider,
+      grounding_sources: identified.product.grounding_sources,
+      provider: match_links.length ? `lens+${synth.provider}` : synth.provider,
     };
   } catch (err) {
     console.error("luxury pipeline failed", err);
-    if (lensProducts.length) {
-      const p = parseTitleBrandModel(lensTitle);
-      return {
-        brand: p.brand || "inconnue",
-        model: p.model || lensTitle,
-        category: "sac / accessoire",
-        color: "non déterminée",
-        material: "non déterminée",
-        summary: `Identifié via Google Lens : ${lensTitle}`,
-        confidence: 0.9,
-        mock: false,
-        provider: "google_lens",
-        product_name: lensTitle,
-        match_links,
-        candidates: [
-          { brand: p.brand || "inconnue", model: p.model || lensTitle, score: 0.9, source: "google_lens" },
-        ],
-      };
-    }
+    if (fromSearch) return toAiDescription(identified);
     return openaiVisionFallback(bytes, contentType);
   }
 }
 
-export async function handleAnalyze(file: File) {
+export async function handleAnalyze(file: File, opts?: { searchMode?: SearchMode }) {
   const buf = await file.arrayBuffer();
   if (buf.byteLength < 100) throw new Error("empty image");
   if (buf.byteLength > 12_000_000) throw new Error("image too large (max 12MB)");
@@ -342,8 +353,8 @@ export async function handleAnalyze(file: File) {
   const cacheOk =
     cached &&
     cached.brand &&
-    (!hasSerpApiKey() || (Array.isArray(cached.match_links) && (cached.match_links as unknown[]).length > 0));
-  if (cacheOk && cached) {
+    (!hasSerpApiKey() || (Array.isArray(cached.match_links) && (cached.match_links as unknown[]).length > 0) || cached.provider);
+  if (cacheOk && cached && opts?.searchMode !== "fallback") {
     console.log("[analyze] full cache HIT via", hit!.via);
     const photoUrl = await uploadPhoto(buf, file.name || "photo.jpg", file.type || "image/jpeg");
     const row = createDraft(photoUrl, { ...cached, cached: true, cache_via: hit!.via });
@@ -365,9 +376,12 @@ export async function handleAnalyze(file: File) {
   const ai = await analyzeImage(buf, file.type || "image/jpeg", {
     publicPhotoUrl: photoUrl,
     cacheKey: fp,
+    searchMode: opts?.searchMode,
   });
-  await setCachedAnalyzeSmart(buf, ai);
-  console.log("[analyze] full cache MISS → stored");
+  if (opts?.searchMode !== "fallback") {
+    await setCachedAnalyzeSmart(buf, ai);
+    console.log("[analyze] full cache MISS → stored");
+  }
   const row = createDraft(photoUrl, ai);
   await saveRfq(row);
   void rememberProduct(ai, photoUrl).catch(() => {});
@@ -400,112 +414,41 @@ export async function handleSuggest(query: string) {
 }
 
 /**
- * Text path: catalogue hit when possible, otherwise live Shopping resolve.
+ * Search path: catalogue → Gemini/Serp identify via facade.
  * Any successful identity is written into the living catalogue.
  */
-export async function handleTextSearch(query: string) {
+export async function handleTextSearch(
+  query: string,
+  opts?: { searchMode?: SearchMode }
+) {
   const q = String(query || "").trim().slice(0, 200);
   if (q.length < 2) {
     throw Object.assign(new Error("Requête trop courte"), { status: 400 });
   }
 
-  const suggestions = await suggestAllModels(q, 8);
-  const top = suggestions[0];
-  const catalogHit = top && top.score >= 40 ? top : null;
-  const livingHit = catalogHit ? null : await matchCatalogProduct(q);
+  const identified = await identifyProduct(
+    { kind: "text", query: q },
+    { forceFallback: opts?.searchMode === "fallback" }
+  );
 
-  let brand = "";
-  let model = "";
-  let title = "";
-  let confidence = 0.75;
-  let provider = "shopping_live";
-  let category = "sac";
-  let candidates: Array<{ brand: string; model: string; score: number; source: string }> = [];
-
-  if (catalogHit) {
-    brand = catalogHit.brand;
-    model = catalogHit.model;
-    title = `${brand} ${model}`;
-    confidence = 0.92;
-    provider = "catalog";
-    category = catalogHit.category || "sac";
-    candidates = suggestions.slice(0, 5).map((s, i) => ({
-      brand: s.brand,
-      model: s.model,
-      score: Math.max(0.4, 1 - i * 0.08),
-      source: "catalog",
-    }));
-  } else if (livingHit) {
-    brand = livingHit.brand;
-    model = livingHit.model;
-    title = `${brand} ${model}`;
-    confidence = 0.9;
-    provider = "living_catalog";
-    candidates = [{ brand, model, score: 0.9, source: "living_catalog" }];
-  } else {
-    if (!hasSerpApiKey()) {
-      throw Object.assign(
-        new Error("Indiquez une marque et un modèle (ex. Gucci Ophidia)"),
-        { status: 400 }
-      );
-    }
-    const live = await fetchGoogleShoppingProducts(q, 12);
-    if (!live.length) {
-      throw Object.assign(
-        new Error("Aucun modèle trouvé — essayez « Marque + modèle » (ex. Gucci Ophidia)"),
-        { status: 404 }
-      );
-    }
-    const best = live[0];
-    const parsed = parseTitleBrandModel(best.title);
-    brand = (parsed.brand || "").trim();
-    model = (parsed.model || best.title).trim();
-    title = brand ? `${brand} ${model}` : best.title.slice(0, 160);
-    confidence = brand ? 0.8 : 0.68;
-    provider = "shopping_live";
-    candidates = live.slice(0, 5).map((p, i) => {
-      const pr = parseTitleBrandModel(p.title);
-      return {
-        brand: pr.brand || brand || "inconnue",
-        model: pr.model || p.title.slice(0, 80),
-        score: Math.max(0.35, 0.85 - i * 0.08),
-        source: "shopping",
-      };
-    });
-
-    // Soft check: at least one significant query token in the winning title
-    const tokens = significantQueryTokens(q);
-    const titleN = normalizeText(best.title);
-    if (tokens.length >= 1 && !tokens.some((t) => titleN.includes(t))) {
-      throw Object.assign(
-        new Error("Résultat trop éloigné — précisez la marque et le modèle"),
-        { status: 404 }
-      );
-    }
+  if (
+    identified.provider === "none" ||
+    (!isStrongModelName(identified.product.model) &&
+      identified.product.confidence < 0.55)
+  ) {
+    throw Object.assign(
+      new Error("Aucun modèle trouvé — essayez « Marque + modèle » (ex. Gucci Ophidia)"),
+      { status: 404 }
+    );
   }
 
-  const searchTitle = brand ? `${brand} ${model}` : title;
-  const products = hasSerpApiKey() ? await fetchGoogleShoppingProducts(searchTitle, 8) : [];
-  let thumbnail = products.find((p) => p.thumbnail)?.thumbnail || "";
-  if (!thumbnail && hasSerpApiKey()) {
-    thumbnail = await fetchProductThumbnail(searchTitle);
+  const ai = toAiDescription(identified);
+  const searchTitle = identified.product.display_name;
+  let thumbnail = "";
+  if (opts?.searchMode !== "fallback") {
+    thumbnail = await serpThumbnail(searchTitle);
   }
-  const match_links = products.map(({ thumbnail: _t, ...rest }) => rest);
-
-  const ai: Record<string, unknown> = {
-    brand: brand || "inconnue",
-    model,
-    product_name: title,
-    lens_title: title,
-    best_guess: title,
-    summary: title,
-    confidence,
-    provider,
-    category,
-    candidates,
-    match_links,
-    product_image: thumbnail || undefined,
-  };
+  if (thumbnail) ai.product_image = thumbnail;
 
   const row = createDraft(thumbnail, ai);
   await saveRfq(row);
@@ -576,27 +519,43 @@ export async function handleConfirm(body: {
 }
 
 /** Deep web seller search for a client RFQ (part 2 — choix 1). */
-export async function handleWebOffers(clientToken: string) {
+export async function handleWebOffers(
+  clientToken: string,
+  opts?: { searchMode?: SearchMode }
+) {
   const req = await getRfqByClientToken(clientToken);
   if (!req) throw Object.assign(new Error("request not found"), { status: 404 });
 
-  const id = resolveOfferIdentity(req);
-  const result = await searchGlobalOffers(id.query, {
-    perMarket: 12,
-    maxOffers: 60,
-    brand: id.brand,
-    model: id.model,
-  });
+  const product = canonicalFromRfqAi(
+    (req.ai_description || {}) as Record<string, unknown>,
+    req.user_edit
+  );
+  const result = await findOffers(
+    product,
+    {
+      budget: req.client_budget ?? undefined,
+      currency: req.client_budget_currency ?? undefined,
+    },
+    { mode: opts?.searchMode === "fallback" ? "fallback" : "live" }
+  );
 
   return {
     ok: true,
     request_id: req.id,
     client_token: req.client_token,
-    product: id.query,
+    product: product.display_name,
+    query: product.display_name,
     photo_url: req.photo_url,
     client_budget: req.client_budget,
     client_budget_currency: req.client_budget_currency,
-    ...result,
+    offers: result.offers,
+    by_region: result.by_region || { usa: 0, europe: 0, asia: 0, africa: 0 },
+    markets_ok: result.markets_ok ?? 0,
+    markets_total: result.markets_total ?? 0,
+    cached: Boolean(result.cached),
+    fallback: Boolean(result.fallback),
+    provider: result.provider,
+    providers_used: result.providers_used,
   };
 }
 

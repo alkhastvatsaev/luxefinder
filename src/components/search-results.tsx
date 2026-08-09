@@ -69,6 +69,31 @@ export function SearchResultsIdentity({ ai, className }: IdentityProps) {
           <ArrowUpRight className="size-3 shrink-0 text-foreground/30" strokeWidth={1.5} />
         </a>
       )}
+
+      {Array.isArray(ai.grounding_sources) && ai.grounding_sources.length > 0 && (
+        <div className="mt-3 flex max-w-full flex-wrap items-center justify-center gap-1.5">
+          {ai.grounding_sources.slice(0, 4).map((g, i) =>
+            g.url ? (
+              <a
+                key={`${g.title}-${i}`}
+                href={g.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="max-w-[9.5rem] truncate rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-foreground/55 transition hover:bg-black/[0.07]"
+              >
+                {g.title}
+              </a>
+            ) : (
+              <span
+                key={`${g.title}-${i}`}
+                className="max-w-[9.5rem] truncate rounded-full bg-black/[0.04] px-2.5 py-1 text-[10px] font-medium text-foreground/45"
+              >
+                {g.title}
+              </span>
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }

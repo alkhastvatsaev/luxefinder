@@ -14,26 +14,33 @@ type Offer = {
   source: string;
   price?: string;
   thumbnail?: string;
-  region: "usa" | "europe" | "asia" | "africa";
-  country: string;
-  kind: "official" | "resale" | "shopping" | "other";
+  region?: "usa" | "europe" | "asia" | "africa" | string;
+  country?: string;
+  kind?: string;
+  provider?: string;
 };
 
-type RegionFilter = "all" | Offer["region"];
+type RegionFilter = "all" | "usa" | "europe" | "asia" | "africa";
 
-const REGION_LABEL: Record<Offer["region"], string> = {
+const REGION_LABEL: Record<"usa" | "europe" | "asia" | "africa", string> = {
   usa: "USA",
   europe: "Europe",
   asia: "Asie",
   africa: "Afrique",
 };
 
+function regionOf(o: Offer): keyof typeof REGION_LABEL {
+  const r = o.region;
+  if (r === "usa" || r === "europe" || r === "asia" || r === "africa") return r;
+  return "europe";
+}
+
 export default function OffresWebPage() {
   const params = useParams();
   const token = String(params.token || "");
   const [product, setProduct] = useState("");
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [byRegion, setByRegion] = useState<Record<Offer["region"], number>>({
+  const [byRegion, setByRegion] = useState<Record<keyof typeof REGION_LABEL, number>>({
     usa: 0,
     europe: 0,
     asia: 0,
@@ -42,6 +49,7 @@ export default function OffresWebPage() {
   const [marketsOk, setMarketsOk] = useState(0);
   const [marketsTotal, setMarketsTotal] = useState(0);
   const [cached, setCached] = useState(false);
+  const [fallback, setFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<RegionFilter>("all");
@@ -57,6 +65,7 @@ export default function OffresWebPage() {
       setMarketsOk(res.markets_ok || 0);
       setMarketsTotal(res.markets_total || 0);
       setCached(Boolean((res as { cached?: boolean }).cached));
+      setFallback(Boolean((res as { fallback?: boolean }).fallback));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur");
     } finally {
@@ -69,7 +78,7 @@ export default function OffresWebPage() {
   }, [load]);
 
   const visible = useMemo(
-    () => (filter === "all" ? offers : offers.filter((o) => o.region === filter)),
+    () => (filter === "all" ? offers : offers.filter((o) => regionOf(o) === filter)),
     [offers, filter]
   );
 
@@ -132,7 +141,14 @@ export default function OffresWebPage() {
             {offers.length} offre{offers.length === 1 ? "" : "s"} · {marketsOk}/{marketsTotal}{" "}
             marchés
             {cached ? " · cache" : ""}
+            {fallback ? " · liens directs" : ""}
           </p>
+
+          {fallback && (
+            <p className="mt-2 text-[12px] text-foreground/45">
+              Recherche live limitée — voici des liens de recherche sur les marketplaces.
+            </p>
+          )}
 
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {filters.map((f) => (
@@ -161,48 +177,54 @@ export default function OffresWebPage() {
             </p>
           ) : (
             <ul className="mt-5 flex flex-col gap-2.5">
-              {visible.map((o) => (
-                <li key={`${o.region}-${o.link}`}>
-                  <a
-                    href={o.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex gap-3 rounded-[1.15rem] bg-muted/50 p-3 ring-1 ring-black/[0.03] transition hover:bg-muted"
-                  >
-                    <div className="size-16 shrink-0 overflow-hidden rounded-[0.9rem] bg-white ring-1 ring-black/[0.04]">
-                      {o.thumbnail ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={o.thumbnail}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-foreground/25">
-                          {REGION_LABEL[o.region]}
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-[-0.02em] text-foreground">
-                        {o.title}
-                      </p>
-                      <p className="mt-1 truncate text-[11px] text-foreground/45">
-                        {o.source} · {o.country}
-                      </p>
-                      <div className="mt-1.5 flex items-center justify-between gap-2">
-                        <span className="text-[13px] font-semibold tabular-nums text-foreground">
-                          {o.price || "Voir le prix"}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0071E3]">
-                          Acheter
-                          <ArrowUpRight className="size-3" strokeWidth={1.75} />
-                        </span>
+              {visible.map((o) => {
+                const region = regionOf(o);
+                const isDeeplink = o.kind === "deeplink" || o.provider === "deeplink";
+                return (
+                  <li key={`${region}-${o.link}`}>
+                    <a
+                      href={o.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex gap-3 rounded-[1.15rem] bg-muted/50 p-3 ring-1 ring-black/[0.03] transition hover:bg-muted"
+                    >
+                      <div className="size-16 shrink-0 overflow-hidden rounded-[0.9rem] bg-white ring-1 ring-black/[0.04]">
+                        {o.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={o.thumbnail}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-foreground/25">
+                            {REGION_LABEL[region]}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </a>
-                </li>
-              ))}
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-[13px] font-semibold leading-snug tracking-[-0.02em] text-foreground">
+                          {o.title}
+                        </p>
+                        <p className="mt-1 truncate text-[11px] text-foreground/45">
+                          {o.source}
+                          {o.country ? ` · ${o.country}` : ""}
+                          {isDeeplink ? " · recherche" : ""}
+                        </p>
+                        <div className="mt-1.5 flex items-center justify-between gap-2">
+                          <span className="text-[13px] font-semibold tabular-nums text-foreground">
+                            {isDeeplink ? "Ouvrir" : o.price || "Voir le prix"}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0071E3]">
+                            {isDeeplink ? "Chercher" : "Acheter"}
+                            <ArrowUpRight className="size-3" strokeWidth={1.75} />
+                          </span>
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </>
