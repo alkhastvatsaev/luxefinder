@@ -323,8 +323,8 @@ export async function analyzeImage(
       (await synthesizeLuxuryProduct(signals, resolved, {
         imageBytes: bytes,
         contentType,
-        // Cap/fallback must not burn Gemini synthesize
-        allowGemini: !forceFallback,
+        // Never double-bill Gemini: identify already spent a call when provider=gemini
+        allowGemini: !forceFallback && identified.provider !== "gemini",
       })) || fromResolvedOnly(signals, resolved);
 
     return {

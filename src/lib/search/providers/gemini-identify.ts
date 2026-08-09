@@ -1,9 +1,18 @@
 /**
- * Gemini identify — grounding is OFF by default (auto), then only if identity is weak.
- * Env: GEMINI_GROUNDING=auto|always|never  (default auto)
+ * Gemini identify — cheap by default:
+ * - images downscaled (see gemini-prep)
+ * - thinkingBudget=0 (2.5 Flash otherwise burns reasoning tokens)
+ * - grounding OFF unless GEMINI_GROUNDING=auto|always
+ *
+ * Env: GEMINI_GROUNDING=never|auto|always  (default never)
  *      GEMINI_IDENTIFY_MODEL (default gemini-2.5-flash)
  */
 
+import {
+  geminiCheapGenerationConfig,
+  geminiModel,
+  prepareImageForGemini,
+} from "@/lib/gemini-prep";
 import { isStrongModelName } from "@/lib/luxury-kb";
 import { parseCanonicalJson, toCanonicalProduct } from "../schemas";
 import { logExternalCall } from "../telemetry";
@@ -18,9 +27,10 @@ function geminiKey(): string {
 }
 
 function groundingMode(): "auto" | "always" | "never" {
-  const v = (process.env.GEMINI_GROUNDING || "auto").toLowerCase().trim();
-  if (v === "always" || v === "never") return v;
-  return "auto";
+  // never = 1 cheap call; auto = 2nd grounded call when weak ($$)
+  const v = (process.env.GEMINI_GROUNDING || "never").toLowerCase().trim();
+  if (v === "always" || v === "auto") return v;
+  return "never";
 }
 
 const SYSTEM = `Tu identifies des articles de luxe (sacs, accessoires).
@@ -84,15 +94,12 @@ async function callGemini(
   grounding?: Array<{ title: string; url?: string }>;
 }> {
   const key = geminiKey();
-  const model = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
+  const model = geminiModel();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
 
   const body: Record<string, unknown> = {
     contents: [{ role: "user", parts }],
-    generationConfig: {
-      temperature: 0.1,
-      responseMimeType: "application/json",
-    },
+    generationConfig: geminiCheapGenerationConfig(),
     systemInstruction: { parts: [{ text: SYSTEM }] },
   };
   if (withGrounding) {
@@ -106,17 +113,44 @@ async function callGemini(
   });
   if (!res.ok) {
     const err = await res.text().catch(() => "");
+    // Older models may reject thinkingConfig — one fallback without it.
+    if (res.status === 400 && /thinkingConfig|Unknown name|Invalid JSON/i.test(err)) {
+      const fallbackBody = {
+        ...body,
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: "application/json",
+          maxOutputTokens: Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 256),
+        },
+      };
+      const res2 = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fallbackBody),
+      });
+      if (!res2.ok) {
+        const err2 = await res2.text().catch(() => "");
+        throw new GeminiHttpError(res2.status, err2.slice(0, 200));
+      }
+      return parseGeminiResponse(await res2.json());
+    }
     throw new GeminiHttpError(res.status, err.slice(0, 200));
   }
-  const data = (await res.json()) as {
-    candidates?: Array<{
-      content?: { parts?: Array<{ text?: string }> };
-      groundingMetadata?: {
-        groundingChunks?: Array<{ web?: { title?: string; uri?: string } }>;
-        webSearchQueries?: string[];
-      };
-    }>;
-  };
+  return parseGeminiResponse(await res.json());
+}
+
+function parseGeminiResponse(data: {
+  candidates?: Array<{
+    content?: { parts?: Array<{ text?: string }> };
+    groundingMetadata?: {
+      groundingChunks?: Array<{ web?: { title?: string; uri?: string } }>;
+      webSearchQueries?: string[];
+    };
+  }>;
+}): {
+  text: string;
+  grounding?: Array<{ title: string; url?: string }>;
+} {
   const cand = data.candidates?.[0];
   const text = cand?.content?.parts?.map((p) => p.text || "").join("") || "";
   const grounding =
@@ -133,7 +167,7 @@ async function callGemini(
   return { text, grounding };
 }
 
-function partsFor(input: IdentifyInput): unknown[] {
+async function partsFor(input: IdentifyInput): Promise<unknown[]> {
   if (input.kind === "text") {
     return [
       {
@@ -141,15 +175,20 @@ function partsFor(input: IdentifyInput): unknown[] {
       },
     ];
   }
-  const b64 = Buffer.from(input.bytes).toString("base64");
-  const mime = input.contentType.startsWith("image/")
-    ? input.contentType
-    : "image/jpeg";
+  const prepared = await prepareImageForGemini(input.bytes, input.contentType);
+  console.log(
+    `[gemini] image ${prepared.originalBytes}→${prepared.preparedBytes}B`
+  );
   return [
     {
       text: "Identifie l'article de luxe sur cette photo (marque, modèle, variante).",
     },
-    { inline_data: { mime_type: mime, data: b64 } },
+    {
+      inline_data: {
+        mime_type: prepared.mimeType,
+        data: prepared.bytes.toString("base64"),
+      },
+    },
   ];
 }
 
@@ -157,7 +196,7 @@ async function identifyOnce(
   input: IdentifyInput,
   withGrounding: boolean
 ): Promise<IdentifyResult> {
-  const { text, grounding } = await callGemini(partsFor(input), withGrounding);
+  const { text, grounding } = await callGemini(await partsFor(input), withGrounding);
   const parsed = repairAndParse(text);
   const product = toCanonicalProduct(
     parsed,

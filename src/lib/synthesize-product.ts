@@ -1,3 +1,8 @@
+import {
+  geminiCheapGenerationConfig,
+  geminiModel,
+  prepareImageForGemini,
+} from "./gemini-prep";
 import type { ResolvedLuxury, VisionSignals } from "./luxury-resolve";
 
 export type ProductCandidate = {
@@ -131,14 +136,15 @@ Règles:
     try {
       const parts: Array<Record<string, unknown>> = [{ text: prompt }];
       if (thinWeb && opts?.imageBytes) {
+        const prepared = await prepareImageForGemini(opts.imageBytes, opts.contentType);
         parts.push({
           inline_data: {
-            mime_type: opts.contentType?.startsWith("image/") ? opts.contentType : "image/jpeg",
-            data: Buffer.from(opts.imageBytes).toString("base64"),
+            mime_type: prepared.mimeType,
+            data: prepared.bytes.toString("base64"),
           },
         });
       }
-      const model = process.env.GEMINI_IDENTIFY_MODEL || "gemini-2.5-flash";
+      const model = geminiModel();
       const r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(gk)}`,
         {
@@ -146,7 +152,7 @@ Règles:
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts }],
-            generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+            generationConfig: geminiCheapGenerationConfig({ temperature: 0.2 }),
           }),
         }
       );
