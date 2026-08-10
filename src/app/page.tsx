@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { listPicsSlides, listSunglassesSlides, listJewelrySlides } from "@/lib/pics";
 import { HOME_APP_JSON_LD } from "@/lib/brand-schema";
+import { detectLocaleFromHeaders } from "@/lib/detect-locale";
+import { getHomeHeroCopy } from "@/lib/home-hero-copy";
 import HomeCoverflow from "@/components/home-coverflow";
 
 export const metadata: Metadata = {
@@ -36,10 +39,12 @@ const SEO_LINKS = [
   { href: "/confidentialite", label: "Confidentialité" },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
   const bagSlides = listPicsSlides();
   const sunglassesSlides = listSunglassesSlides();
   const jewelrySlides = listJewelrySlides();
+  const locale = detectLocaleFromHeaders(await headers());
+  const copy = getHomeHeroCopy(locale);
   return (
     <>
       <script
@@ -56,6 +61,7 @@ export default function HomePage() {
         et pages marques.
       </p>
       <HomeCoverflow
+        copy={copy}
         bagSlides={bagSlides}
         sunglassesSlides={sunglassesSlides}
         jewelrySlides={jewelrySlides}

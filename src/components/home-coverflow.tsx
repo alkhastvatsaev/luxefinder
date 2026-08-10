@@ -13,10 +13,12 @@ import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { GradientShimmer } from "@/components/ui/gradient-shimmer";
 import { SearchResultsIdentity, SearchResultsActions } from "@/components/search-results";
 import { luxefinderApi, type AiDescription } from "@/lib/api";
+import type { HomeHeroCopy } from "@/lib/home-hero-copy";
 import { lensFaceClassName } from "@/lib/lens-glass";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  copy: HomeHeroCopy;
   bagSlides: { src: string; alt: string; title: string }[];
   sunglassesSlides?: { src: string; alt: string; title: string }[];
   jewelrySlides?: { src: string; alt: string; title: string }[];
@@ -33,6 +35,7 @@ type Result = {
 const BAG_PATH = "M0 50 L1600 50";
 
 export default function HomeCoverflow({
+  copy,
   bagSlides,
   sunglassesSlides = [],
   jewelrySlides = [],
@@ -337,7 +340,7 @@ export default function HomeCoverflow({
                         lensHintVisible ? "opacity-100" : "opacity-0"
                       )}
                     >
-                      Envoyez la photo de ce que vous cherchez.
+                      {copy.lensHint}
                     </span>
                     <input
                       ref={fileInputRef}
@@ -345,7 +348,7 @@ export default function HomeCoverflow({
                       type="file"
                       accept="image/*"
                       disabled={busy}
-                      aria-label="Choisir une photo"
+                      aria-label={copy.uploadAria}
                       onChange={(e) => {
                         onFile(e.target.files?.[0] || null);
                         e.target.value = "";
@@ -372,7 +375,7 @@ export default function HomeCoverflow({
                 pauseBetweenMax={9000}
                 className="text-inherit font-semibold tracking-inherit"
               >
-                Vous savez ce que vous voulez.
+                {copy.line1}
               </GradientShimmer>
               <GradientShimmer
                 gradient="bay"
@@ -383,7 +386,7 @@ export default function HomeCoverflow({
                 pauseBetweenMax={9000}
                 className="text-inherit font-semibold tracking-inherit"
               >
-                On vous trouve les vendeurs.
+                {copy.line2}
               </GradientShimmer>
             </p>
           )}
@@ -423,7 +426,7 @@ export default function HomeCoverflow({
               className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-foreground/40 transition hover:text-foreground/70"
             >
               <ArrowLeft className="size-3.5" strokeWidth={1.75} />
-              Retour
+              {copy.back}
             </button>
           )}
         </div>
