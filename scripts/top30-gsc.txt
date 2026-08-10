@@ -1,10 +1,11 @@
+# Inspect FIRST for brand queries: luxefinder, luxe finder, luxefinder.app
 https://luxefinder.app/
-https://luxefinder.app/guide
-https://luxefinder.app/articles
-https://luxefinder.app/marques
-https://luxefinder.app/comment-ca-marche
-https://luxefinder.app/faq
 https://luxefinder.app/a-propos
+https://luxefinder.app/faq
+https://luxefinder.app/comment-ca-marche
+https://luxefinder.app/guide
+https://luxefinder.app/marques
+https://luxefinder.app/articles
 https://luxefinder.app/guide/trouver-vendeur-sac-luxe
 https://luxefinder.app/guide/budget-sac-luxe
 https://luxefinder.app/guide/identifier-modele-sac

@@ -1,10 +1,24 @@
 # Human GSC / Bing checklist (BLOCKED for agent without console access)
 
-1. Open Google Search Console for luxefinder.app (verification file public/google985da6a6498bd3a5.html).
-2. Submit sitemaps:
+## Brand queries (priority)
+1. GSC → Performance → filter queries: luxefinder, luxe finder, luxefinder.app
+2. URL Inspection → request indexing for / and /a-propos FIRST
+3. Then inspect brand cluster from scripts/top30-gsc.txt (lines 2–7)
+
+## Sitemaps & indexation
+4. Open Google Search Console for luxefinder.app (verification file public/google985da6a6498bd3a5.html).
+5. Submit sitemaps:
    - https://luxefinder.app/sitemap.xml
    - https://luxefinder.app/image-sitemap.xml
-3. URL Inspection → request indexing for each URL in scripts/top30-gsc.txt (batch over a few days).
-4. Bing Webmaster Tools → confirm BingSiteAuth.xml ; submit same sitemaps.
-5. After deploy to production, re-run: npm run indexnow (or npx tsx scripts/indexnow-submit.ts).
-6. Monitor Coverage / Page indexing for soft 404s and excluded grey redirects.
+6. URL Inspection → request indexing for remaining URLs in scripts/top30-gsc.txt (batch over a few days).
+7. Bing Webmaster Tools → confirm BingSiteAuth.xml ; submit same sitemaps.
+
+## Post-deploy
+8. After deploy to production, run brand cluster first:
+   - npx tsx scripts/indexnow-brand.ts
+   - then full: npm run indexnow (or npx tsx scripts/indexnow-submit.ts)
+9. Monitor Coverage / Page indexing for soft 404s and excluded grey redirects.
+
+## Weekly SERP monitor
+10. Check Google positions for: "LuxeFinder", "luxefinder", "luxe finder" (FR + EN)
+11. Check site:luxefinder.app count (target >50 indexed URLs)

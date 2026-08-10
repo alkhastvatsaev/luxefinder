@@ -9,13 +9,13 @@ const SITE = "https://luxefinder.app";
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: `${SITE}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${SITE}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
+    { url: `${SITE}/a-propos`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE}/comment-ca-marche`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE}/guide`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
     { url: `${SITE}/articles`, lastModified: now, changeFrequency: "weekly", priority: 0.95 },
     { url: `${SITE}/marques`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${SITE}/comment-ca-marche`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${SITE}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
-    { url: `${SITE}/a-propos`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE}/mentions-legales`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
     { url: `${SITE}/confidentialite`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];

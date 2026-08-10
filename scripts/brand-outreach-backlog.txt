@@ -1,11 +1,18 @@
 LuxeFinder brand outreach backlog (BLOCKED for human execution)
-1. Google Search Console — submit https://luxefinder.app/sitemap.xml + image-sitemap.xml ; inspect top30 (scripts/top30-gsc.txt)
-2. Bing Webmaster — BingSiteAuth.xml already in public/
-3. Create/claim Google Business or brand Knowledge signals if applicable
-4. Instagram @luxefinder (or chosen handle) — bio link luxefinder.app ; add to Organization sameAs when live
-5. LinkedIn company page — sameAs when live
-6. Product Hunt / AlternativeTo listing — “photo + budget luxury finder”
-7. Guest note on FR second-hand luxury blogs (Vestiaire editorial, local dépôt-vente blogs) — brand anchor LuxeFinder
-8. Harmonie / directories FR startups (only clean listings)
-9. Press kit one-pager differentiating vs luxfinder.com and luxefinder.ae
-10. Monitor SERP weekly: "LuxeFinder", "luxefinder.app", site:luxefinder.app
+
+## Priority — no social profiles (WhatsApp + site only)
+1. WhatsApp Business: display name « LuxeFinder », website luxefinder.app, description with « Luxe Finder »
+2. Google Search Console — submit sitemaps ; inspect brand URLs first (scripts/top30-gsc.txt lines 2–7)
+3. Bing Webmaster — BingSiteAuth.xml already in public/
+4. Weekly SERP monitor: "LuxeFinder", "luxefinder", "luxe finder" (FR + EN), site:luxefinder.app
+
+## Skip (not applicable without local business)
+- Google Business Profile — app web, not local commerce (avoid spam profile)
+
+## Optional when ready
+5. Instagram @luxefinder — bio link luxefinder.app ; add to Organization sameAs when live
+6. LinkedIn company page — sameAs when live
+7. Product Hunt / AlternativeTo listing — “photo + budget luxury finder”
+8. Guest note on FR second-hand luxury blogs — brand anchor LuxeFinder
+9. Harmonie / directories FR startups (only clean listings)
+10. Press kit one-pager differentiating vs luxfinder.com and luxefinder.ae

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import { WhatsAppFab } from "@/components/ui/whatsapp-fab";
+import { BRAND_JSON_LD } from "@/lib/brand-schema";
 import "./globals.css";
 
 const sans = Outfit({
@@ -14,20 +15,24 @@ const OG_IMAGE = {
   url: "/og-default.jpg",
   width: 1200,
   height: 1200,
-  alt: "LuxeFinder — photo, budget, vendeurs de luxe",
+  alt: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: {
-    default: "LuxeFinder — photo + budget → vendeurs de sacs de luxe",
+    default: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
     template: "%s | LuxeFinder",
   },
   description:
-    "Envoyez une photo de sac ou accessoire de luxe, indiquez votre budget — LuxeFinder trouve des pistes de vendeurs. App gratuite.",
+    "LuxeFinder (Luxe Finder) sur luxefinder.app : envoyez une photo de sac ou accessoire de luxe, indiquez votre budget — trouvez des pistes de vendeurs. App gratuite.",
   applicationName: "LuxeFinder",
   keywords: [
     "LuxeFinder",
+    "Luxe Finder",
+    "luxefinder",
+    "luxe finder",
+    "luxefinder.app",
     "trouver vendeur sac luxe",
     "sac luxe occasion photo",
     "identifier modèle sac",
@@ -38,14 +43,15 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     url: SITE,
     siteName: "LuxeFinder",
-    title: "LuxeFinder — photo + budget → vendeurs de sacs de luxe",
-    description: "Photo + budget → pistes vendeurs pour sacs et accessoires de luxe.",
+    title: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs de luxe",
+    description:
+      "LuxeFinder (Luxe Finder) sur luxefinder.app — photo + budget → pistes vendeurs pour sacs et accessoires de luxe.",
     images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LuxeFinder — photo, budget, vendeurs",
-    description: "Photo. Budget. Offres vendeurs.",
+    title: "LuxeFinder (Luxe Finder) — photo, budget, vendeurs",
+    description: "Luxe Finder · luxefinder.app · photo, budget, offres vendeurs.",
     images: [OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
@@ -61,6 +67,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className={`${sans.variable} font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(BRAND_JSON_LD) }}
+        />
         {children}
         <WhatsAppFab />
       </body>

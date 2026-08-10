@@ -17,6 +17,14 @@ export const metadata: Metadata = {
 
 const FAQ = [
   {
+    q: "C’est LuxeFinder ou Luxe Finder ?",
+    a: "Les deux désignent la même app sur luxefinder.app. « LuxeFinder » est le nom officiel ; « Luxe Finder » (avec espace) est une orthographe courante dans Google. Voir aussi la page à propos.",
+  },
+  {
+    q: "Pourquoi luxefinder.app et pas .com ou .ae ?",
+    a: "luxefinder.app est le site officiel de l’app photo + budget pour sacs et accessoires de luxe. luxfinder.com est un aggregator fashion distinct ; luxefinder.ae est une agence immobilière à Dubaï — aucun lien avec LuxeFinder.",
+  },
+  {
     q: "LuxeFinder vend-il des sacs ?",
     a: "Non. LuxeFinder est une app de recherche : vous envoyez une photo et un budget, on aide à trouver des pistes de vendeurs / offres. La transaction se discute ensuite avec le vendeur.",
   },

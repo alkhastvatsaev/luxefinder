@@ -74,7 +74,14 @@ export function SeoShell({
               FAQ
             </Link>
           </div>
-          <p className="mt-3">LuxeFinder — photo, budget, vendeurs. Contenu informatif.</p>
+          <p className="mt-3">
+            LuxeFinder ·{" "}
+            <Link href="/a-propos#luxe-finder" className="hover:text-black/70">
+              Luxe Finder
+            </Link>
+            {" · "}
+            luxefinder.app — photo, budget, vendeurs. Contenu informatif.
+          </p>
         </footer>
       </main>
     </div>
