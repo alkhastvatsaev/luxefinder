@@ -75,7 +75,7 @@ function localeFromCountry(country: string | null): HomeHeroLocale | null {
 
 /**
  * Resolve hero locale from geo country + Accept-Language.
- * IP country wins (except BE/CH/LU/IE/CY). Unknown country → English.
+ * Mapped country → its locale. Unmapped or missing country → English.
  */
 export function resolveLocale(
   country: string | null,
@@ -91,13 +91,8 @@ export function resolveLocale(
   const fromCountry = localeFromCountry(cc);
   if (fromCountry) return fromCountry;
 
-  // Geo detected but unmapped (e.g. US, JP) → international English, not browser French
-  if (cc) return "en";
-
-  const fromLang = parseAcceptLanguage(acceptLanguage);
-  if (fromLang) return fromLang;
-
-  return "fr";
+  // Country not in list (US, JP, …) or geo unavailable → English
+  return "en";
 }
 
 /** Read locale set by middleware, or resolve from raw request headers. */

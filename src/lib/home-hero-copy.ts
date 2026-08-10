@@ -236,7 +236,7 @@ export function isHomeHeroLocale(code: string): code is HomeHeroLocale {
 }
 
 export function getHomeHeroCopy(locale: string): HomeHeroCopy {
-  const base = locale.split("-")[0]?.toLowerCase() ?? "fr";
+  const base = locale.split("-")[0]?.toLowerCase() ?? "en";
   if (isHomeHeroLocale(base)) return COPY[base];
-  return COPY.fr;
+  return COPY.en;
 }
