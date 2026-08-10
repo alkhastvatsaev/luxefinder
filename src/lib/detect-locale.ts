@@ -4,7 +4,7 @@ import {
   isHomeHeroLocale,
 } from "@/lib/home-hero-copy";
 
-/** ISO 3166-1 alpha-2 country → primary UI locale for European visitors. */
+/** ISO 3166-1 alpha-2 country → primary UI locale. */
 const COUNTRY_TO_LOCALE: Record<string, HomeHeroLocale> = {
   AD: "es",
   AL: "en",
@@ -48,12 +48,13 @@ const COUNTRY_TO_LOCALE: Record<string, HomeHeroLocale> = {
   SI: "sl",
   SK: "sk",
   SM: "it",
+  TR: "tr",
   UA: "pl",
   VA: "it",
   XK: "en",
 };
 
-/** Multi-language countries: prefer Accept-Language when it matches a supported locale. */
+/** Multi-language countries: Accept-Language can override when it matches a supported locale. */
 const MULTI_LANG_COUNTRIES = new Set(["BE", "CH", "LU", "IE", "CY"]);
 
 function parseAcceptLanguage(header: string | null): HomeHeroLocale | null {
@@ -73,29 +74,40 @@ function localeFromCountry(country: string | null): HomeHeroLocale | null {
 }
 
 /**
- * Resolve hero locale from request headers.
- * Priority: Vercel IP country (with Accept-Language tie-break for BE/CH/LU/IE/CY),
- * then Accept-Language, then French default.
+ * Resolve hero locale from geo country + Accept-Language.
+ * IP country wins (except BE/CH/LU/IE/CY). Unknown country → English.
  */
-export function detectLocaleFromHeaders(headers: Headers): HomeHeroLocale {
-  const country =
-    headers.get("x-vercel-ip-country") ??
-    headers.get("cf-ipcountry") ??
-    null;
-  const acceptLang = headers.get("accept-language");
+export function resolveLocale(
+  country: string | null,
+  acceptLanguage: string | null
+): HomeHeroLocale {
+  const cc = country?.toUpperCase() ?? null;
 
-  if (country && MULTI_LANG_COUNTRIES.has(country.toUpperCase())) {
-    const fromLang = parseAcceptLanguage(acceptLang);
+  if (cc && MULTI_LANG_COUNTRIES.has(cc)) {
+    const fromLang = parseAcceptLanguage(acceptLanguage);
     if (fromLang) return fromLang;
   }
 
-  const fromCountry = localeFromCountry(country);
+  const fromCountry = localeFromCountry(cc);
   if (fromCountry) return fromCountry;
 
-  const fromLang = parseAcceptLanguage(acceptLang);
+  // Geo detected but unmapped (e.g. US, JP) → international English, not browser French
+  if (cc) return "en";
+
+  const fromLang = parseAcceptLanguage(acceptLanguage);
   if (fromLang) return fromLang;
 
   return "fr";
+}
+
+/** Read locale set by middleware, or resolve from raw request headers. */
+export function detectLocaleFromHeaders(headers: Headers): HomeHeroLocale {
+  const preset = headers.get("x-luxefinder-locale");
+  if (preset && isHomeHeroLocale(preset)) return preset;
+
+  const country =
+    headers.get("x-vercel-ip-country") ?? headers.get("cf-ipcountry") ?? null;
+  return resolveLocale(country, headers.get("accept-language"));
 }
 
 /** Exported for tests — all supported hero locales. */

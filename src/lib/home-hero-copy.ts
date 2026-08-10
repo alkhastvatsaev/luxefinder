@@ -34,6 +34,7 @@ export const HOME_HERO_LOCALES = [
   "mt",
   "no",
   "is",
+  "tr",
 ] as const;
 
 export type HomeHeroLocale = (typeof HOME_HERO_LOCALES)[number];
@@ -220,6 +221,13 @@ const COPY: Record<HomeHeroLocale, HomeHeroCopy> = {
     line2: "Við finnum seljendurna fyrir þig.",
     uploadAria: "Velja mynd",
     back: "Til baka",
+  },
+  tr: {
+    lensHint: "Aradığınız şeyin fotoğrafını gönderin.",
+    line1: "Ne istediğinizi biliyorsunuz.",
+    line2: "Satıcıları sizin için buluyoruz.",
+    uploadAria: "Fotoğraf seçin",
+    back: "Geri",
   },
 };
 
