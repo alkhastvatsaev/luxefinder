@@ -80,7 +80,7 @@ export default async function ArticlePage({ params }: Props) {
       "@type": "Organization",
       name: "LuxeFinder",
       url: SITE,
-      logo: { "@type": "ImageObject", url: `${SITE}/favicon.ico` },
+      logo: { "@type": "ImageObject", url: `${SITE}/brand/logo.svg` },
     },
     mainEntityOfPage: pageUrl,
     image: {

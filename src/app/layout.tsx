@@ -55,6 +55,11 @@ export const metadata: Metadata = {
     images: [OG_IMAGE.url],
   },
   robots: { index: true, follow: true },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/apple-icon", type: "image/png", sizes: "180x180" }],
+    shortcut: "/icon.svg",
+  },
 };
 
 export const viewport: Viewport = {
